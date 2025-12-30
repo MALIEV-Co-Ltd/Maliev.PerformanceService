@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: performance-service
+  namespace: maliev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: performance-service
+  template:
+    metadata:
+      labels:
+        app: performance-service
+    spec:
+      containers:
+      - name: performance-service
+        image: gcr.io/maliev/performance-service:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /performance/liveness
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /performance/readiness
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__PerformanceDbContext
+          valueFrom:
+            secretKeyRef:
+              name: performance-service-secrets
+              key: database-connection-string
+        - name: ExternalServices__EmployeeService__BaseUrl
+          valueFrom:
+            configMapKeyRef:
+              name: performance-service-config
+              key: employee-service-url
+        - name: ExternalServices__NotificationService__BaseUrl
+          valueFrom:
+            configMapKeyRef:
+              name: performance-service-config
+              key: notification-service-url
+        - name: ExternalServices__IAMService__BaseUrl
+          valueFrom:
+            configMapKeyRef:
+              name: performance-service-config
+              key: iam-service-url
