@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: Performance Management Service API
+  description: |
+    API for managing employee performance reviews, goals, performance improvement plans (PIPs), and 360-degree feedback.
+
+    ## Authentication
+    All endpoints require JWT authentication via Bearer token in the `Authorization` header.
+
+    ## Permissions
+    - `performance.create`: Create performance reviews
+    - `performance.read`: View reviews and goals
+    - `performance.update`: Update reviews and goals
+    - `performance.admin`: Manage PIPs
+    - `performance.feedback`: Submit feedback
+
+    ## Base Path
+    All endpoints are prefixed with `/performance/v1`
+  version: 1.0.0
+  contact:
+    name: MALIEV Co., Ltd.
+    email: api@maliev.com
+
+servers:
+  - url: https://api.maliev.com/performance/v1
+    description: Production
+  - url: https://staging-api.maliev.com/performance/v1
+    description: Staging
+  - url: http://localhost:8080/performance/v1
+    description: Local development
+
+tags:
+  - name: Performance Reviews
+    description: Performance review lifecycle management
+  - name: Goals
+    description: Goal setting and tracking
+  - name: PIPs
+    description: Performance Improvement Plan management
+  - name: Feedback
+    description: 360-degree feedback submission and retrieval
+
+paths:
+  /employees/{employeeId}/reviews:
+    get:
+      tags:
+        - Performance Reviews
+      summary: Get performance reviews for an employee
+      description: Retrieves all performance reviews for a specific employee with pagination support
+      operationId: getPerformanceReviews
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ReviewStatus'
+          description: Filter by review status
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedPerformanceReviews'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+    post:
+      tags:
+        - Performance Reviews
+      summary: Create a new performance review
+      description: Creates a new performance review for an employee
+      operationId: createPerformanceReview
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePerformanceReviewRequest'
+      responses:
+        '201':
+          description: Performance review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Review period overlaps with existing review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: REVIEW_PERIOD_OVERLAP
+                message: A review for this cycle already exists in this period
+                timestamp: 2025-12-28T10:00:00Z
+      security:
+        - BearerAuth: [performance.create]
+
+  /reviews/{reviewId}:
+    get:
+      tags:
+        - Performance Reviews
+      summary: Get performance review by ID
+      description: Retrieves a specific performance review with all associated goals and feedback
+      operationId: getPerformanceReviewById
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReviewDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+    put:
+      tags:
+        - Performance Reviews
+      summary: Update performance review
+      description: Updates an existing performance review (self-assessment or manager assessment)
+      operationId: updatePerformanceReview
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePerformanceReviewRequest'
+      responses:
+        '200':
+          description: Review updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.update]
+
+  /reviews/{reviewId}/submit:
+    put:
+      tags:
+        - Performance Reviews
+      summary: Submit performance review for acknowledgment
+      description: Manager submits completed review for employee acknowledgment
+      operationId: submitPerformanceReview
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      responses:
+        '200':
+          description: Review submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+        '400':
+          description: Self-assessment required before submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: SELF_ASSESSMENT_REQUIRED
+                message: Employee must complete self-assessment before manager review can be submitted
+                timestamp: 2025-12-28T10:00:00Z
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.update]
+
+  /reviews/{reviewId}/acknowledge:
+    put:
+      tags:
+        - Performance Reviews
+      summary: Acknowledge performance review
+      description: Employee acknowledges that they have read and understood the review
+      operationId: acknowledgePerformanceReview
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      responses:
+        '200':
+          description: Review acknowledged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceReview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+  /employees/{employeeId}/goals:
+    get:
+      tags:
+        - Goals
+      summary: Get goals for an employee
+      description: Retrieves all goals for a specific employee with optional filtering
+      operationId: getGoals
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/GoalStatus'
+          description: Filter by goal status
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedGoals'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+    post:
+      tags:
+        - Goals
+      summary: Create a new goal
+      description: Creates a new goal for an employee, optionally linked to a review period
+      operationId: createGoal
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest'
+      responses:
+        '201':
+          description: Goal created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - BearerAuth: [performance.update]
+
+  /goals/{goalId}:
+    put:
+      tags:
+        - Goals
+      summary: Update goal
+      description: Updates goal description, success criteria, or target date
+      operationId: updateGoal
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalRequest'
+      responses:
+        '200':
+          description: Goal updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.update]
+
+  /goals/{goalId}/progress:
+    put:
+      tags:
+        - Goals
+      summary: Update goal progress
+      description: Adds a progress update to the goal and optionally updates status
+      operationId: updateGoalProgress
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalProgressRequest'
+      responses:
+        '200':
+          description: Progress updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.update]
+
+  /employees/{employeeId}/pips:
+    get:
+      tags:
+        - PIPs
+      summary: Get PIPs for an employee
+      description: Retrieves all Performance Improvement Plans for a specific employee
+      operationId: getPIPs
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PIP'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+    post:
+      tags:
+        - PIPs
+      summary: Create a Performance Improvement Plan
+      description: Initiates a new PIP for an employee (HR/Admin only)
+      operationId: createPIP
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePIPRequest'
+      responses:
+        '201':
+          description: PIP created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PIP'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Employee already has an active PIP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: PIP_ALREADY_ACTIVE
+                message: Employee already has an active PIP
+                timestamp: 2025-12-28T10:00:00Z
+      security:
+        - BearerAuth: [performance.admin]
+
+  /pips/{pipId}/outcome:
+    put:
+      tags:
+        - PIPs
+      summary: Record PIP outcome
+      description: Records the outcome of a completed PIP (HR/Admin only)
+      operationId: recordPIPOutcome
+      parameters:
+        - $ref: '#/components/parameters/PIPId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPIPOutcomeRequest'
+      responses:
+        '200':
+          description: PIP outcome recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PIP'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.admin]
+
+  /reviews/{reviewId}/feedback:
+    post:
+      tags:
+        - Feedback
+      summary: Submit feedback for a review
+      description: Submits 360-degree feedback for an employee's performance review
+      operationId: submitFeedback
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitFeedbackRequest'
+      responses:
+        '201':
+          description: Feedback submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.feedback]
+
+    get:
+      tags:
+        - Feedback
+      summary: Get feedback for a review
+      description: Retrieves all feedback for a performance review (anonymized as needed)
+      operationId: getFeedback
+      parameters:
+        - $ref: '#/components/parameters/ReviewId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feedback'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - BearerAuth: [performance.read]
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from authentication service
+
+  parameters:
+    EmployeeId:
+      name: employeeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Employee UUID
+
+    ReviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Performance Review UUID
+
+    GoalId:
+      name: goalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Goal UUID
+
+    PIPId:
+      name: pipId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: PIP UUID
+
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Pagination cursor (base64 encoded timestamp|id)
+
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: UNAUTHORIZED
+            message: Missing or invalid authentication token
+            timestamp: 2025-12-28T10:00:00Z
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: NOT_AUTHORIZED
+            message: Insufficient permissions to perform this action
+            timestamp: 2025-12-28T10:00:00Z
+
+    NotFound:
+      description: Not Found - Resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: REVIEW_NOT_FOUND
+            message: Performance review not found
+            timestamp: 2025-12-28T10:00:00Z
+
+    BadRequest:
+      description: Bad Request - Invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
+  schemas:
+    ReviewCycle:
+      type: string
+      enum: [Annual, SemiAnnual, Quarterly, Probation]
+
+    PerformanceRating:
+      type: string
+      enum: [ExceedsExpectations, MeetsExpectations, NeedsImprovement, BelowExpectations, Unsatisfactory]
+
+    ReviewStatus:
+      type: string
+      enum: [Draft, SelfAssessmentPending, ManagerReviewPending, Submitted, Acknowledged, Completed]
+
+    GoalStatus:
+      type: string
+      enum: [NotStarted, InProgress, AtRisk, Completed, Deferred, Cancelled]
+
+    PIPStatus:
+      type: string
+      enum: [Active, Extended, Completed, Terminated]
+
+    PIPOutcome:
+      type: string
+      enum: [Successful, Unsuccessful, ExtendedAgain]
+
+    FeedbackType:
+      type: string
+      enum: [Manager, Peer, DirectReport, Self]
+
+    PerformanceReview:
+      type: object
+      required:
+        - id
+        - employeeId
+        - reviewerId
+        - reviewCycle
+        - reviewPeriodStart
+        - reviewPeriodEnd
+        - status
+        - createdDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        reviewerId:
+          type: string
+          format: uuid
+        reviewCycle:
+          $ref: '#/components/schemas/ReviewCycle'
+        reviewPeriodStart:
+          type: string
+          format: date-time
+        reviewPeriodEnd:
+          type: string
+          format: date-time
+        selfAssessment:
+          type: string
+          nullable: true
+        managerAssessment:
+          type: string
+          nullable: true
+        overallRating:
+          $ref: '#/components/schemas/PerformanceRating'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ReviewStatus'
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledgedDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdDate:
+          type: string
+          format: date-time
+        modifiedDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    PerformanceReviewDetail:
+      allOf:
+        - $ref: '#/components/schemas/PerformanceReview'
+        - type: object
+          properties:
+            goals:
+              type: array
+              items:
+                $ref: '#/components/schemas/Goal'
+            feedback:
+              type: array
+              items:
+                $ref: '#/components/schemas/Feedback'
+
+    CreatePerformanceReviewRequest:
+      type: object
+      required:
+        - reviewCycle
+        - reviewPeriodStart
+        - reviewPeriodEnd
+      properties:
+        reviewCycle:
+          $ref: '#/components/schemas/ReviewCycle'
+        reviewPeriodStart:
+          type: string
+          format: date-time
+        reviewPeriodEnd:
+          type: string
+          format: date-time
+        selfAssessment:
+          type: string
+          nullable: true
+
+    UpdatePerformanceReviewRequest:
+      type: object
+      properties:
+        selfAssessment:
+          type: string
+        managerAssessment:
+          type: string
+        overallRating:
+          $ref: '#/components/schemas/PerformanceRating'
+
+    PagedPerformanceReviews:
+      type: object
+      required:
+        - items
+        - hasNextPage
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceReview'
+        nextCursor:
+          type: string
+          nullable: true
+        hasNextPage:
+          type: boolean
+
+    Goal:
+      type: object
+      required:
+        - id
+        - employeeId
+        - description
+        - targetDate
+        - completionStatus
+        - createdDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        performanceReviewId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+        successCriteria:
+          type: string
+          nullable: true
+        targetDate:
+          type: string
+          format: date-time
+        completionStatus:
+          $ref: '#/components/schemas/GoalStatus'
+        progressUpdates:
+          type: string
+          nullable: true
+          description: Append-only progress notes with timestamps
+        completedDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdDate:
+          type: string
+          format: date-time
+        modifiedDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateGoalRequest:
+      type: object
+      required:
+        - description
+        - targetDate
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        successCriteria:
+          type: string
+          nullable: true
+        targetDate:
+          type: string
+          format: date-time
+        performanceReviewId:
+          type: string
+          format: uuid
+          nullable: true
+
+    UpdateGoalRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        successCriteria:
+          type: string
+        targetDate:
+          type: string
+          format: date-time
+
+    UpdateGoalProgressRequest:
+      type: object
+      required:
+        - progressUpdate
+      properties:
+        progressUpdate:
+          type: string
+          minLength: 1
+          maxLength: 500
+        completionStatus:
+          $ref: '#/components/schemas/GoalStatus'
+
+    PagedGoals:
+      type: object
+      required:
+        - items
+        - hasNextPage
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Goal'
+        nextCursor:
+          type: string
+          nullable: true
+        hasNextPage:
+          type: boolean
+
+    PIP:
+      type: object
+      required:
+        - id
+        - employeeId
+        - initiatedBy
+        - startDate
+        - endDate
+        - reason
+        - improvementAreas
+        - successCriteria
+        - status
+        - createdDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        initiatedBy:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        improvementAreas:
+          type: string
+        successCriteria:
+          type: string
+        checkInNotes:
+          type: string
+          nullable: true
+          description: Append-only check-in notes with timestamps
+        status:
+          $ref: '#/components/schemas/PIPStatus'
+        outcome:
+          $ref: '#/components/schemas/PIPOutcome'
+          nullable: true
+        createdDate:
+          type: string
+          format: date-time
+        modifiedDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreatePIPRequest:
+      type: object
+      required:
+        - startDate
+        - endDate
+        - reason
+        - improvementAreas
+        - successCriteria
+      properties:
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          minLength: 1
+        improvementAreas:
+          type: string
+          minLength: 1
+        successCriteria:
+          type: string
+          minLength: 1
+
+    RecordPIPOutcomeRequest:
+      type: object
+      required:
+        - outcome
+      properties:
+        outcome:
+          $ref: '#/components/schemas/PIPOutcome'
+
+    Feedback:
+      type: object
+      required:
+        - id
+        - performanceReviewId
+        - feedbackType
+        - feedback
+        - isAnonymous
+        - submittedDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        performanceReviewId:
+          type: string
+          format: uuid
+        providerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null if anonymous feedback
+        feedbackType:
+          $ref: '#/components/schemas/FeedbackType'
+        feedback:
+          type: string
+        isAnonymous:
+          type: boolean
+        submittedDate:
+          type: string
+          format: date-time
+
+    SubmitFeedbackRequest:
+      type: object
+      required:
+        - feedbackType
+        - feedback
+      properties:
+        feedbackType:
+          $ref: '#/components/schemas/FeedbackType'
+        feedback:
+          type: string
+          minLength: 1
+        isAnonymous:
+          type: boolean
+          default: false
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+
+    ValidationErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+        - validationErrors
+      properties:
+        error:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: One or more validation errors occurred
+        timestamp:
+          type: string
+          format: date-time
+        validationErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+          example:
+            - field: reviewPeriodStart
+              message: Review period start date must be before end date

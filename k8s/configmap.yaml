@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: performance-service-config
+  namespace: maliev
+data:
+  employee-service-url: "http://employee-service"
+  notification-service-url: "http://notification-service"
+  iam-service-url: "http://iam-service"
