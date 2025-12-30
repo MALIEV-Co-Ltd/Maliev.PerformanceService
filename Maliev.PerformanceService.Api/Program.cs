@@ -89,20 +89,9 @@ builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.Subm
 builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePIPValidator>();
 
 // 8. HTTP Clients
-builder.Services.AddHttpClient<IEmployeeServiceClient, EmployeeServiceClient>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ExternalServices:EmployeeService:BaseUrl"] ?? "http://employee-service");
-}).AddStandardResilienceHandler();
-
-builder.Services.AddHttpClient<INotificationServiceClient, NotificationServiceClient>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ExternalServices:NotificationService:BaseUrl"] ?? "http://notification-service");
-}).AddStandardResilienceHandler();
-
-builder.Services.AddHttpClient("IAMService", client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ExternalServices:IAMService:BaseUrl"] ?? "http://iam-service");
-}).AddStandardResilienceHandler();
+builder.AddServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService");
+builder.AddServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService");
+builder.AddServiceClient("IAMService");
 
 // 9. Background Services
 builder.Services.AddHostedService<PerformanceReviewReminderBackgroundService>();
