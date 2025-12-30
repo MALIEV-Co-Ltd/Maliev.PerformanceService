@@ -1,4 +1,3 @@
-using Cronos;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,13 +8,13 @@ namespace Maliev.PerformanceService.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Background service that periodically sends reminders for pending performance reviews.
-/// Runs daily at 8 AM.
+/// Runs daily at 8 AM UTC.
 /// </summary>
 public class PerformanceReviewReminderBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<PerformanceReviewReminderBackgroundService> _logger;
-    private readonly CronExpression _cronExpression;
+    private readonly TimeSpan _scheduledTime = new(8, 0, 0); // 8:00 AM
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PerformanceReviewReminderBackgroundService"/> class.
@@ -28,8 +27,6 @@ public class PerformanceReviewReminderBackgroundService : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        // Daily at 8:00 AM
-        _cronExpression = CronExpression.Parse("0 8 * * *");
     }
 
     /// <inheritdoc/>
@@ -39,20 +36,26 @@ public class PerformanceReviewReminderBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var utcNow = DateTime.UtcNow;
-            var nextUtc = _cronExpression.GetNextOccurrence(utcNow);
+            var now = DateTime.UtcNow;
+            var nextRunTime = CalculateNextDailyRunTime(now, _scheduledTime);
+            var delay = nextRunTime - now;
 
-            if (nextUtc.HasValue)
+            if (delay > TimeSpan.Zero)
             {
-                var delay = nextUtc.Value - utcNow;
-                if (delay > TimeSpan.Zero)
-                {
-                    await Task.Delay(delay, stoppingToken);
-                }
+                await Task.Delay(delay, stoppingToken);
+            }
 
+            if (!stoppingToken.IsCancellationRequested)
+            {
                 await SendRemindersAsync(stoppingToken);
             }
         }
+    }
+
+    private static DateTime CalculateNextDailyRunTime(DateTime currentTime, TimeSpan targetTime)
+    {
+        var today = currentTime.Date.Add(targetTime);
+        return currentTime < today ? today : today.AddDays(1);
     }
 
     private async Task SendRemindersAsync(CancellationToken stoppingToken)

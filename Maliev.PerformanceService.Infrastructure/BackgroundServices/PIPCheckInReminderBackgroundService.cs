@@ -1,4 +1,3 @@
-using Cronos;
 using Maliev.PerformanceService.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,13 +7,14 @@ namespace Maliev.PerformanceService.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Background service that periodically sends reminders for PIP check-ins.
-/// Runs weekly on Monday at 9 AM.
+/// Runs weekly on Monday at 9 AM UTC.
 /// </summary>
 public class PIPCheckInReminderBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<PIPCheckInReminderBackgroundService> _logger;
-    private readonly CronExpression _cronExpression;
+    private readonly DayOfWeek _targetDay = DayOfWeek.Monday;
+    private readonly TimeSpan _scheduledTime = new(9, 0, 0); // 9:00 AM
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PIPCheckInReminderBackgroundService"/> class.
@@ -27,8 +27,6 @@ public class PIPCheckInReminderBackgroundService : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        // Weekly on Monday at 9:00 AM
-        _cronExpression = CronExpression.Parse("0 9 * * 1");
     }
 
     /// <inheritdoc/>
@@ -38,20 +36,34 @@ public class PIPCheckInReminderBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var utcNow = DateTime.UtcNow;
-            var nextUtc = _cronExpression.GetNextOccurrence(utcNow);
+            var now = DateTime.UtcNow;
+            var nextRunTime = CalculateNextWeeklyRunTime(now, _targetDay, _scheduledTime);
+            var delay = nextRunTime - now;
 
-            if (nextUtc.HasValue)
+            if (delay > TimeSpan.Zero)
             {
-                var delay = nextUtc.Value - utcNow;
-                if (delay > TimeSpan.Zero)
-                {
-                    await Task.Delay(delay, stoppingToken);
-                }
+                await Task.Delay(delay, stoppingToken);
+            }
 
+            if (!stoppingToken.IsCancellationRequested)
+            {
                 await SendRemindersAsync(stoppingToken);
             }
         }
+    }
+
+    private static DateTime CalculateNextWeeklyRunTime(DateTime currentTime, DayOfWeek targetDay, TimeSpan targetTime)
+    {
+        var daysUntilTarget = ((int)targetDay - (int)currentTime.DayOfWeek + 7) % 7;
+        var nextTargetDay = currentTime.Date.AddDays(daysUntilTarget).Add(targetTime);
+
+        // If it's the target day but past the target time, schedule for next week
+        if (daysUntilTarget == 0 && currentTime >= nextTargetDay)
+        {
+            nextTargetDay = nextTargetDay.AddDays(7);
+        }
+
+        return nextTargetDay;
     }
 
     private async Task SendRemindersAsync(CancellationToken stoppingToken)
