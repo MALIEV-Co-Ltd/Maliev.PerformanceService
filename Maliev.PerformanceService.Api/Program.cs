@@ -35,10 +35,7 @@ builder.AddMassTransitWithRabbitMq(x =>
 
 // --- 5. Security ---
 builder.AddJwtAuthentication();
-if (!builder.Environment.IsEnvironment("Testing"))
-{
-    builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>();
-}
+builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>();
 builder.Services.AddDataProtection();
 
 // --- 6. API Configuration ---
@@ -94,10 +91,7 @@ builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.Crea
 // 8. HTTP Clients
 builder.AddServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService");
 builder.AddServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService");
-if (!builder.Environment.IsEnvironment("Testing"))
-{
-    builder.AddServiceClient("IAMService");
-}
+builder.AddServiceClient("IAMService");
 
 // 9. Background Services
 builder.Services.AddHostedService<PerformanceReviewReminderBackgroundService>();
