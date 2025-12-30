@@ -4,7 +4,10 @@
     <ProjectReference Include="..\Maliev.PerformanceService.Application\Maliev.PerformanceService.Application.csproj" />
     <ProjectReference Include="..\Maliev.PerformanceService.Domain\Maliev.PerformanceService.Domain.csproj" />
     <ProjectReference Include="..\..\Maliev.Aspire\Maliev.Aspire.ServiceDefaults\Maliev.Aspire.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\..\Maliev.EmployeeService\Maliev.EmployeeService.Domain\Maliev.EmployeeService.Domain.csproj" />
+    <ProjectReference Include="..\Maliev.PerformanceService.Application\Maliev.PerformanceService.Application.csproj" />
+    <ProjectReference Include="..\Maliev.PerformanceService.Domain\Maliev.PerformanceService.Domain.csproj" />
+    <ProjectReference Include="..\..\Maliev.Aspire\Maliev.Aspire.ServiceDefaults\Maliev.Aspire.ServiceDefaults.csproj" />
+  </ItemGroup>
   </ItemGroup>
 
   <ItemGroup>
