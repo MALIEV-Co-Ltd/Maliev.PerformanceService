@@ -1,8 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using Maliev.PerformanceService.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MassTransit;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
@@ -82,16 +85,26 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
 
                 builder.ConfigureTestServices(services =>
                 {
-                    // Remove all IAM registration-related services to avoid connection errors in tests
-                    var iamDescriptors = services
-                        .Where(d => d.ServiceType.Name.Contains("IAM") ||
-                                    d.ImplementationType?.Name.Contains("IAM") == true)
-                        .ToList();
-
-                    foreach (var descriptor in iamDescriptors)
+                    // Configure JWT Bearer authentication with test RSA key
+                    services.PostConfigureAll<JwtBearerOptions>(options =>
                     {
-                        services.Remove(descriptor);
-                    }
+                        options.MapInboundClaims = false;
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateIssuer = false,
+                            ValidateAudience = false,
+                            ValidateLifetime = false,
+                            ValidateIssuerSigningKey = false,
+                            SignatureValidator = (token, parameters) => new JwtSecurityToken(token)
+                        };
+                    });
+
+                    // Ensure MassTransit waits until started for tests to avoid race conditions
+                    services.Configure<MassTransitHostOptions>(options =>
+                    {
+                        options.WaitUntilStarted = true;
+                        options.StartTimeout = TimeSpan.FromSeconds(30);
+                    });
 
                     // Add MassTransit Test Harness (overrides standard registration)
                     services.AddMassTransitTestHarness();
