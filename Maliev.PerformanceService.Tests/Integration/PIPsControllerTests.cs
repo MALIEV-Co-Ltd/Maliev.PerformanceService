@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Maliev.PerformanceService.Tests.Integration;
 
+[Collection("IntegrationTests")]
 public class PIPsControllerTests : BaseIntegrationTest
 {
     private readonly Mock<IEmployeeServiceClient> _employeeServiceMock = new();
