@@ -101,15 +101,7 @@ builder.Services.AddHostedService<DataArchivalBackgroundService>();
 var app = builder.Build();
 
 // --- 10. Database Migrations ---
-try
-{
-    await app.MigrateDatabaseAsync<PerformanceDbContext>();
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Database migration failed");
-}
+await app.MigrateDatabaseAsync<PerformanceDbContext>();
 
 // --- 11. Middleware Pipeline ---
 app.UseStandardMiddleware();
