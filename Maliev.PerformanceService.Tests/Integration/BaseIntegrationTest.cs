@@ -32,21 +32,21 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
     /// PostgreSQL container for integration testing.
     /// </summary>
     protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+        .WithImage("postgres:18-alpine")
         .Build();
 
     /// <summary>
     /// Redis container for integration testing.
     /// </summary>
     protected readonly RedisContainer _redisContainer = new RedisBuilder()
-        .WithImage("redis:7-alpine")
+        .WithImage("redis:8.4-alpine")
         .Build();
 
     /// <summary>
     /// RabbitMQ container for integration testing.
     /// </summary>
     protected readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder()
-        .WithImage("rabbitmq:4-management-alpine")
+        .WithImage("rabbitmq:4.2-alpine")
         .Build();
 
     /// <summary>
@@ -97,13 +97,6 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
                             ValidateIssuerSigningKey = false,
                             SignatureValidator = (token, parameters) => new JwtSecurityToken(token)
                         };
-                    });
-
-                    // Ensure MassTransit waits until started for tests to avoid race conditions
-                    services.Configure<MassTransitHostOptions>(options =>
-                    {
-                        options.WaitUntilStarted = true;
-                        options.StartTimeout = TimeSpan.FromSeconds(30);
                     });
 
                     // Add MassTransit Test Harness (overrides standard registration)
