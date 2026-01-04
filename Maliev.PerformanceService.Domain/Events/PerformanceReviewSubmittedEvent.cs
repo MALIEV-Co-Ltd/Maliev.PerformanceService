@@ -9,7 +9,7 @@ namespace Maliev.PerformanceService.Domain.Events;
 /// <param name="EmployeeId">The identifier of the employee.</param>
 /// <param name="OverallRating">The final rating assigned.</param>
 /// <param name="AcknowledgedDate">The date when acknowledgement occurred.</param>
-public record PerformanceReviewAcknowledgedEvent(
+public record PerformanceReviewSubmittedEvent(
     Guid ReviewId,
     Guid EmployeeId,
     PerformanceRating? OverallRating,

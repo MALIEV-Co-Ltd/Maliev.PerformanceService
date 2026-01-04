@@ -72,7 +72,7 @@ public class UpdateGoalProgressCommandHandler
         {
             goal.CompletionDate = DateTime.UtcNow;
             
-            await _publishEndpoint.Publish(new GoalCompletedEvent(
+            await _publishEndpoint.Publish(new PerformanceGoalCompletedEvent(
                 goal.Id,
                 goal.EmployeeId,
                 goal.Description,
