@@ -9,7 +9,7 @@ namespace Maliev.PerformanceService.Domain.Events;
 /// <param name="StartDate">The start date of the PIP.</param>
 /// <param name="EndDate">The scheduled end date of the PIP.</param>
 /// <param name="Reason">The reason why the PIP was initiated.</param>
-public record PIPInitiatedEvent(
+public record PerformancePIPInitiatedEvent(
     Guid PIPId,
     Guid EmployeeId,
     Guid InitiatorId,

@@ -54,7 +54,7 @@ public class AcknowledgePerformanceReviewCommandHandlerTests
         Assert.Equal(ReviewStatus.Acknowledged, updatedReview.Status);
         Assert.NotNull(updatedReview.AcknowledgedDate);
         _repositoryMock.Verify(x => x.UpdateAsync(review, It.IsAny<CancellationToken>()), Times.Once);
-        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PerformanceReviewAcknowledgedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PerformanceReviewSubmittedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

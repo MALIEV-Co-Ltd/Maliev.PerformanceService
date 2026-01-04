@@ -67,7 +67,7 @@ public class AcknowledgePerformanceReviewCommandHandler
 
         await _repository.UpdateAsync(review);
 
-        await _publishEndpoint.Publish(new PerformanceReviewAcknowledgedEvent(
+        await _publishEndpoint.Publish(new PerformanceReviewSubmittedEvent(
             review.Id,
             review.EmployeeId,
             review.OverallRating,

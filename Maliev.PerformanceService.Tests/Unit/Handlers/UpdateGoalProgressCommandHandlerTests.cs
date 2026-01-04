@@ -93,7 +93,7 @@ public class UpdateGoalProgressCommandHandlerTests
         Assert.Null(error);
         Assert.Equal(GoalStatus.Completed, updatedGoal!.CurrentStatus);
         Assert.NotNull(updatedGoal.CompletionDate);
-        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<GoalCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PerformanceGoalCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
