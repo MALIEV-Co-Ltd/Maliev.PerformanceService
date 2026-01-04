@@ -7,7 +7,7 @@ namespace Maliev.PerformanceService.Domain.Events;
 /// <param name="EmployeeId">The identifier of the employee.</param>
 /// <param name="Description">The description of the goal.</param>
 /// <param name="CompletionDate">The date when the goal was marked as completed.</param>
-public record GoalCompletedEvent(
+public record PerformanceGoalCompletedEvent(
     Guid GoalId,
     Guid EmployeeId,
     string Description,

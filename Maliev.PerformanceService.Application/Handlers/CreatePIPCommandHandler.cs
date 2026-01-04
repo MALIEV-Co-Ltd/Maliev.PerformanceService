@@ -84,7 +84,7 @@ public class CreatePIPCommandHandler
 
         var createdPip = await _repository.CreateAsync(pip, cancellationToken);
 
-        await _publishEndpoint.Publish(new PIPInitiatedEvent(
+        await _publishEndpoint.Publish(new PerformancePIPInitiatedEvent(
             createdPip.Id,
             createdPip.EmployeeId,
             createdPip.InitiatorId,
