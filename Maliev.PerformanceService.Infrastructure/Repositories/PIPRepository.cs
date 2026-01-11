@@ -67,4 +67,12 @@ public class PIPRepository : IPIPRepository
             .Where(x => x.Status == PIPStatus.Active || x.Status == PIPStatus.Extended)
             .ToListAsync(cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<PerformanceImprovementPlan>> GetAllActiveAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PerformanceImprovementPlans
+            .Where(x => x.Status == PIPStatus.Active || x.Status == PIPStatus.Extended)
+            .ToListAsync(cancellationToken);
+    }
 }
