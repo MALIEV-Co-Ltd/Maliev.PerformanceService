@@ -51,5 +51,5 @@ public interface IPIPRepository
     /// <summary>
     /// Retrieves all active PIPs across all employees.
     /// </summary>
-    Task<IEnumerable<PerformanceImprovementPlan>> GetAllActivePIPsAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<PerformanceImprovementPlan>> GetAllActiveAsync(CancellationToken cancellationToken = default);
 }

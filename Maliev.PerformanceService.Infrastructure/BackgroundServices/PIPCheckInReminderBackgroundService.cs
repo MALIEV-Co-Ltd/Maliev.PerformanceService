@@ -74,7 +74,7 @@ public class PIPCheckInReminderBackgroundService : BackgroundService
         var repository = scope.ServiceProvider.GetRequiredService<IPIPRepository>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationServiceClient>();
 
-        var activePips = await repository.GetAllActivePIPsAsync(stoppingToken);
+        var activePips = await repository.GetAllActiveAsync(stoppingToken);
 
         foreach (var pip in activePips)
         {
