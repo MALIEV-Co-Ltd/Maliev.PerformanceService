@@ -35,7 +35,11 @@ builder.AddMassTransitWithRabbitMq(x =>
 
 // --- 5. Security ---
 builder.AddJwtAuthentication();
-builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>();
+
+// IAM Registration
+builder.AddIAMServiceClient("performance");
+builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>("performance");
+
 builder.Services.AddDataProtection();
 
 // --- 6. API Configuration ---
@@ -105,7 +109,10 @@ await app.MigrateDatabaseAsync<PerformanceDbContext>();
 
 // --- 11. Middleware Pipeline ---
 app.UseStandardMiddleware();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseRouting();
 app.UseCors();
 app.UseAuthentication();
