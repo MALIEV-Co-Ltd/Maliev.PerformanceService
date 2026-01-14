@@ -1,3 +1,4 @@
+#pragma warning disable CA1848 // For improved performance, use the LoggerMessage delegates
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Infrastructure.BackgroundServices;
