@@ -1,4 +1,3 @@
-#pragma warning disable CA1848 // For improved performance, use the LoggerMessage delegates
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Infrastructure.BackgroundServices;
@@ -17,7 +16,7 @@ var bootstrapLogger = loggerFactory.CreateLogger("Program");
 
 try
 {
-    bootstrapLogger.LogInformation("Starting Performance Service host");
+    Program.Log.StartingHost(bootstrapLogger, "Performance Service");
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -135,12 +134,12 @@ try
     app.MapDefaultEndpoints(servicePrefix: "performance");
     app.MapApiDocumentation(servicePrefix: "performance");
 
-    logger.LogInformation("Performance Service started successfully");
+    Program.Log.ServiceStarted(logger, "Performance Service");
     await app.RunAsync();
 }
 catch (Exception ex)
 {
-    bootstrapLogger.LogCritical(ex, "Performance Service host terminated unexpectedly during startup");
+    Program.Log.HostTerminated(bootstrapLogger, ex, "Performance Service");
     throw;
 }
 finally
@@ -151,4 +150,17 @@ finally
 /// <summary>
 /// Main program class for the Performance Management Service.
 /// </summary>
-public partial class Program { }
+public partial class Program
+{
+    internal static partial class Log
+    {
+        [LoggerMessage(Level = LogLevel.Information, Message = "Starting {ServiceName} host")]
+        public static partial void StartingHost(ILogger logger, string serviceName);
+
+        [LoggerMessage(Level = LogLevel.Critical, Message = "{ServiceName} host terminated unexpectedly during startup")]
+        public static partial void HostTerminated(ILogger logger, Exception ex, string serviceName);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{ServiceName} started successfully")]
+        public static partial void ServiceStarted(ILogger logger, string serviceName);
+    }
+}
