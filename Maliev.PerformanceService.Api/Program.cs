@@ -7,124 +7,145 @@ using Maliev.PerformanceService.Infrastructure.IAM;
 using Maliev.PerformanceService.Infrastructure.Repositories;
 using Maliev.PerformanceService.Infrastructure.Consumers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MassTransit;
 
-var builder = WebApplication.CreateBuilder(args);
+// Initialize bootstrap logging
+using var loggerFactory = LoggerFactory.Create(logBuilder => logBuilder.AddConsole());
+var bootstrapLogger = loggerFactory.CreateLogger("Program");
 
-// --- 1. Secrets & Configuration ---
-builder.AddGoogleSecretManagerVolume();
-
-// --- 2. Infrastructure & Observability ---
-builder.AddServiceDefaults();
-builder.AddStandardMiddleware(options =>
+try
 {
-    options.EnableRequestLogging = true;
-});
-builder.AddServiceMeters("performance-service");
+    bootstrapLogger.LogInformation("Starting Performance Service host");
 
-// --- 3. Data & Cache ---
-builder.AddPostgresDbContext<PerformanceDbContext>(connectionName: "PerformanceDbContext");
-builder.AddRedisDistributedCache(instanceName: "performance:");
+    var builder = WebApplication.CreateBuilder(args);
 
-// --- 4. Messaging ---
-builder.AddMassTransitWithRabbitMq(x =>
-{
-    x.AddConsumer<EmployeeCreatedEventConsumer>();
-    x.AddConsumer<EmployeeTerminatedEventConsumer>();
-});
+    // --- 1. Secrets & Configuration ---
+    builder.AddGoogleSecretManagerVolume();
 
-// --- 5. Security ---
-builder.AddJwtAuthentication();
+    // --- 2. Infrastructure & Observability ---
+    builder.AddServiceDefaults();
+    builder.AddStandardMiddleware(options =>
+    {
+        options.EnableRequestLogging = true;
+    });
+    builder.AddServiceMeters("performance-service");
 
-// IAM Registration
-builder.AddIAMServiceClient("performance");
-builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>("performance");
+    // --- 3. Data & Cache ---
+    builder.AddPostgresDbContext<PerformanceDbContext>(connectionName: "PerformanceDbContext");
+    builder.AddRedisDistributedCache(instanceName: "performance:");
 
-builder.Services.AddDataProtection();
+    // --- 4. Messaging ---
+    builder.AddMassTransitWithRabbitMq(x =>
+    {
+        x.AddConsumer<EmployeeCreatedEventConsumer>();
+        x.AddConsumer<EmployeeTerminatedEventConsumer>();
+    });
 
-// --- 6. API Configuration ---
-builder.AddDefaultCors();
-builder.AddDefaultApiVersioning();
-builder.AddStandardRateLimiting();
+    // --- 5. Security ---
+    builder.AddJwtAuthentication();
 
-if (!builder.Environment.IsProduction())
-{
-    builder.AddStandardOpenApi(
-        title: "MALIEV Performance Management Service API",
-        description: "Manages employee performance reviews, goals, and feedback.");
+    // IAM Registration
+    builder.AddIAMServiceClient("performance");
+    builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>("performance");
+
+    builder.Services.AddDataProtection();
+
+    // --- 6. API Configuration ---
+    builder.AddDefaultCors();
+    builder.AddDefaultApiVersioning();
+    builder.AddStandardRateLimiting();
+
+    if (!builder.Environment.IsProduction())
+    {
+        builder.AddStandardOpenApi(
+            title: "MALIEV Performance Management Service API",
+            description: "Manages employee performance reviews, goals, and feedback.");
+    }
+
+    builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower;
+    });
+
+    // --- 7. Application Services ---
+    builder.Services.AddScoped<IPerformanceReviewRepository, PerformanceReviewRepository>();
+    builder.Services.AddScoped<IGoalRepository, GoalRepository>();
+    builder.Services.AddScoped<IPIPRepository, PIPRepository>();
+    builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+
+    // Command/Query Handlers
+    builder.Services.AddScoped<CreatePerformanceReviewCommandHandler>();
+    builder.Services.AddScoped<UpdatePerformanceReviewCommandHandler>();
+    builder.Services.AddScoped<SubmitPerformanceReviewCommandHandler>();
+    builder.Services.AddScoped<AcknowledgePerformanceReviewCommandHandler>();
+    builder.Services.AddScoped<CreateGoalCommandHandler>();
+    builder.Services.AddScoped<UpdateGoalCommandHandler>();
+    builder.Services.AddScoped<UpdateGoalProgressCommandHandler>();
+    builder.Services.AddScoped<SubmitFeedbackCommandHandler>();
+    builder.Services.AddScoped<CreatePIPCommandHandler>();
+    builder.Services.AddScoped<UpdatePIPCommandHandler>();
+    builder.Services.AddScoped<RecordPIPOutcomeCommandHandler>();
+    builder.Services.AddScoped<GetPerformanceReviewsQueryHandler>();
+    builder.Services.AddScoped<GetPerformanceReviewByIdQueryHandler>();
+    builder.Services.AddScoped<GetGoalsQueryHandler>();
+    builder.Services.AddScoped<GetGoalByIdQueryHandler>();
+    builder.Services.AddScoped<GetFeedbackQueryHandler>();
+    builder.Services.AddScoped<GetPIPsQueryHandler>();
+
+    // Validators
+    builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePerformanceReviewValidator>();
+    builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreateGoalValidator>();
+    builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.UpdateGoalProgressValidator>();
+    builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.SubmitFeedbackValidator>();
+    builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePIPValidator>();
+
+    // 8. HTTP Clients
+    builder.AddServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService");
+    builder.AddServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService");
+    builder.AddServiceClient("IAMService");
+
+    // 9. Background Services
+    builder.Services.AddHostedService<PerformanceReviewReminderBackgroundService>();
+    builder.Services.AddHostedService<PIPCheckInReminderBackgroundService>();
+    builder.Services.AddHostedService<DataArchivalBackgroundService>();
+
+    var app = builder.Build();
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+    // --- 10. Database Migrations ---
+    await app.MigrateDatabaseAsync<PerformanceDbContext>();
+
+    // --- 11. Middleware Pipeline ---
+    app.UseStandardMiddleware();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
+    app.UseRouting();
+    app.UseCors();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseRateLimiter();
+
+    // --- 12. Endpoints ---
+    app.MapControllers();
+    app.MapDefaultEndpoints(servicePrefix: "performance");
+    app.MapApiDocumentation(servicePrefix: "performance");
+
+    logger.LogInformation("Performance Service started successfully");
+    await app.RunAsync();
 }
-
-builder.Services.AddControllers()
-.AddJsonOptions(options =>
+catch (Exception ex)
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower;
-});
-
-// --- 7. Application Services ---
-builder.Services.AddScoped<IPerformanceReviewRepository, PerformanceReviewRepository>();
-builder.Services.AddScoped<IGoalRepository, GoalRepository>();
-builder.Services.AddScoped<IPIPRepository, PIPRepository>();
-builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
-
-// Command/Query Handlers
-builder.Services.AddScoped<CreatePerformanceReviewCommandHandler>();
-builder.Services.AddScoped<UpdatePerformanceReviewCommandHandler>();
-builder.Services.AddScoped<SubmitPerformanceReviewCommandHandler>();
-builder.Services.AddScoped<AcknowledgePerformanceReviewCommandHandler>();
-builder.Services.AddScoped<CreateGoalCommandHandler>();
-builder.Services.AddScoped<UpdateGoalCommandHandler>();
-builder.Services.AddScoped<UpdateGoalProgressCommandHandler>();
-builder.Services.AddScoped<SubmitFeedbackCommandHandler>();
-builder.Services.AddScoped<CreatePIPCommandHandler>();
-builder.Services.AddScoped<UpdatePIPCommandHandler>();
-builder.Services.AddScoped<RecordPIPOutcomeCommandHandler>();
-builder.Services.AddScoped<GetPerformanceReviewsQueryHandler>();
-builder.Services.AddScoped<GetPerformanceReviewByIdQueryHandler>();
-builder.Services.AddScoped<GetGoalsQueryHandler>();
-builder.Services.AddScoped<GetGoalByIdQueryHandler>();
-builder.Services.AddScoped<GetFeedbackQueryHandler>();
-builder.Services.AddScoped<GetPIPsQueryHandler>();
-
-// Validators
-builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePerformanceReviewValidator>();
-builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreateGoalValidator>();
-builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.UpdateGoalProgressValidator>();
-builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.SubmitFeedbackValidator>();
-builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePIPValidator>();
-
-// 8. HTTP Clients
-builder.AddServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService");
-builder.AddServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService");
-builder.AddServiceClient("IAMService");
-
-// 9. Background Services
-builder.Services.AddHostedService<PerformanceReviewReminderBackgroundService>();
-builder.Services.AddHostedService<PIPCheckInReminderBackgroundService>();
-builder.Services.AddHostedService<DataArchivalBackgroundService>();
-
-var app = builder.Build();
-
-// --- 10. Database Migrations ---
-await app.MigrateDatabaseAsync<PerformanceDbContext>();
-
-// --- 11. Middleware Pipeline ---
-app.UseStandardMiddleware();
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
+    bootstrapLogger.LogCritical(ex, "Performance Service host terminated unexpectedly during startup");
+    throw;
 }
-app.UseRouting();
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseRateLimiter();
-
-// --- 12. Endpoints ---
-app.MapControllers();
-app.MapDefaultEndpoints(servicePrefix: "performance");
-app.MapApiDocumentation(servicePrefix: "performance");
-
-await app.RunAsync();
+finally
+{
+    loggerFactory.Dispose();
+}
 
 /// <summary>
 /// Main program class for the Performance Management Service.
