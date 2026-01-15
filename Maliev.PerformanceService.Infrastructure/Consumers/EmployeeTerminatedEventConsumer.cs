@@ -1,6 +1,6 @@
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts.Generated;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -34,11 +34,11 @@ public class EmployeeTerminatedEventConsumer : IConsumer<EmployeeTerminatedEvent
     /// <inheritdoc/>
     public async Task Consume(ConsumeContext<EmployeeTerminatedEvent> context)
     {
-        var message = context.Message;
-        _logger.LogInformation("Processing termination for employee {EmployeeId}.", message.EmployeeId);
+        var payload = context.Message.Payload;
+        _logger.LogInformation("Processing termination for employee {EmployeeId}.", payload.EmployeeId);
 
         // 1. Close active reviews
-        var reviews = await _reviewRepository.GetByEmployeeIdAsync(message.EmployeeId);
+        var reviews = await _reviewRepository.GetByEmployeeIdAsync(payload.EmployeeId);
         foreach (var review in reviews.Where(r => r.Status != ReviewStatus.Completed))
         {
             review.Status = ReviewStatus.Completed; // Mark as closed early
@@ -48,7 +48,7 @@ public class EmployeeTerminatedEventConsumer : IConsumer<EmployeeTerminatedEvent
         }
 
         // 2. Terminate active PIPs
-        var activePip = await _pipRepository.GetActivePIPByEmployeeIdAsync(message.EmployeeId);
+        var activePip = await _pipRepository.GetActivePIPByEmployeeIdAsync(payload.EmployeeId);
         if (activePip != null)
         {
             activePip.Status = PIPStatus.Terminated;
@@ -59,3 +59,4 @@ public class EmployeeTerminatedEventConsumer : IConsumer<EmployeeTerminatedEvent
         }
     }
 }
+

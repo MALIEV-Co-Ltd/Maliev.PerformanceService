@@ -1,4 +1,4 @@
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts.Generated;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -23,12 +23,13 @@ public class EmployeeCreatedEventConsumer : IConsumer<EmployeeCreatedEvent>
     /// <inheritdoc/>
     public Task Consume(ConsumeContext<EmployeeCreatedEvent> context)
     {
-        var message = context.Message;
+        var payload = context.Message.Payload;
         _logger.LogInformation("Employee created: {EmployeeId}, EmployeeNumber: {EmployeeNumber}.", 
-            message.EmployeeId, message.EmployeeNumber);
+            payload.EmployeeId, payload.EmployeeNumber);
         
         // Additional logic like caching or initializing settings can be added here.
         
         return Task.CompletedTask;
     }
 }
+
