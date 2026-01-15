@@ -28,9 +28,9 @@ public class GetGoalByIdQueryHandler
     public async Task<Goal?> HandleAsync(GetGoalByIdQuery query, CancellationToken cancellationToken = default)
     {
         var goal = await _repository.GetByIdAsync(query.GoalId, cancellationToken);
-        
+
         // TODO: Authorization check
-        
+
         return goal;
     }
 }

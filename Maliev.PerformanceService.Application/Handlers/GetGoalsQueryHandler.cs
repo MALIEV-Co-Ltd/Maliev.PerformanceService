@@ -28,7 +28,7 @@ public class GetGoalsQueryHandler
     public async Task<(IEnumerable<Goal> Items, Guid? NextCursor)> HandleAsync(GetGoalsQuery query, CancellationToken cancellationToken = default)
     {
         // TODO: Authorization check
-        
+
         return await _repository.GetByEmployeeIdPaginatedAsync(query.EmployeeId, query.Cursor, query.Limit, cancellationToken);
     }
 }

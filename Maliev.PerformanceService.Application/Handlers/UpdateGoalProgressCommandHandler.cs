@@ -24,7 +24,7 @@ public class UpdateGoalProgressCommandHandler
     /// Initializes a new instance of the <see cref="UpdateGoalProgressCommandHandler"/> class.
     /// </summary>
     public UpdateGoalProgressCommandHandler(
-        IGoalRepository repository, 
+        IGoalRepository repository,
         IPublishEndpoint publishEndpoint,
         INotificationServiceClient notificationService,
         UpdateGoalProgressValidator validator,
@@ -61,8 +61,8 @@ public class UpdateGoalProgressCommandHandler
 
         var oldStatus = goal.CurrentStatus;
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-        goal.ProgressUpdates = string.IsNullOrEmpty(goal.ProgressUpdates) 
-            ? "[" + timestamp + "] " + command.ProgressUpdate 
+        goal.ProgressUpdates = string.IsNullOrEmpty(goal.ProgressUpdates)
+            ? "[" + timestamp + "] " + command.ProgressUpdate
             : $"{goal.ProgressUpdates}\n[" + timestamp + "] " + command.ProgressUpdate;
 
         goal.CurrentStatus = command.CompletionStatus;
@@ -71,7 +71,7 @@ public class UpdateGoalProgressCommandHandler
         if (command.CompletionStatus == GoalStatus.Completed && oldStatus != GoalStatus.Completed)
         {
             goal.CompletionDate = DateTime.UtcNow;
-            
+
             await _publishEndpoint.Publish(new PerformanceGoalCompletedEvent(
                 goal.Id,
                 goal.EmployeeId,
@@ -89,7 +89,7 @@ public class UpdateGoalProgressCommandHandler
 
         await _repository.UpdateAsync(goal, cancellationToken);
 
-        _logger.LogInformation("Progress updated for goal {GoalId}. Status changed from {OldStatus} to {NewStatus}.", 
+        _logger.LogInformation("Progress updated for goal {GoalId}. Status changed from {OldStatus} to {NewStatus}.",
             goal.Id, oldStatus, goal.CurrentStatus);
 
         return (goal, null);

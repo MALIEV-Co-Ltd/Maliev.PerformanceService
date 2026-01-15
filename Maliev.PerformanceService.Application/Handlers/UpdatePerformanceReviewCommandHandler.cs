@@ -68,7 +68,7 @@ public class UpdatePerformanceReviewCommandHandler
             }
             review.Status = ReviewStatus.SelfAssessmentPending;
             review.SubmittedDate = DateTime.UtcNow;
-            
+
             // TODO: Notify manager
         }
 

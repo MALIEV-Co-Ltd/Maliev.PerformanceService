@@ -28,9 +28,9 @@ public class GetPerformanceReviewByIdQueryHandler
     public async Task<PerformanceReview?> HandleAsync(GetPerformanceReviewByIdQuery query, CancellationToken cancellationToken = default)
     {
         var review = await _repository.GetByIdAsync(query.ReviewId, cancellationToken);
-        
+
         // TODO: Authorization check
-        
+
         return review;
     }
 }

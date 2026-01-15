@@ -29,7 +29,7 @@ public class GetPerformanceReviewsQueryHandler
     {
         // TODO: Authorization check
         // employees see own reviews, managers see direct reports, HR sees all
-        
+
         return await _repository.GetByEmployeeIdAsync(query.EmployeeId, cancellationToken);
     }
 }

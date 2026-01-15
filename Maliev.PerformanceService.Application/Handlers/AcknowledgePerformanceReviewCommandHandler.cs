@@ -49,14 +49,14 @@ public class AcknowledgePerformanceReviewCommandHandler
 
         if (review.EmployeeId != command.AcknowledgedBy)
         {
-            _logger.LogWarning("User {UserId} attempted to acknowledge review {ReviewId} belonging to {EmployeeId}", 
+            _logger.LogWarning("User {UserId} attempted to acknowledge review {ReviewId} belonging to {EmployeeId}",
                 command.AcknowledgedBy, command.ReviewId, review.EmployeeId);
             return (null, "Only the employee being reviewed can acknowledge it");
         }
 
         if (review.Status != ReviewStatus.Submitted)
         {
-            _logger.LogWarning("Review {ReviewId} is in status {Status}, but must be Submitted for acknowledgment.", 
+            _logger.LogWarning("Review {ReviewId} is in status {Status}, but must be Submitted for acknowledgment.",
                 command.ReviewId, review.Status);
             return (null, "Review must be submitted by the manager before it can be acknowledged");
         }
@@ -73,7 +73,7 @@ public class AcknowledgePerformanceReviewCommandHandler
             review.OverallRating,
             review.AcknowledgedDate.Value));
 
-        _logger.LogInformation("Performance review {ReviewId} acknowledged by employee {EmployeeId}", 
+        _logger.LogInformation("Performance review {ReviewId} acknowledged by employee {EmployeeId}",
             review.Id, review.EmployeeId);
 
         return (review, null);

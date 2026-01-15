@@ -92,7 +92,7 @@ public class CreatePIPCommandHandler
             createdPip.EndDate,
             createdPip.Reason), cancellationToken);
 
-        _logger.LogInformation("PIP {PIPId} initiated for employee {EmployeeId} by {InitiatorId}.", 
+        _logger.LogInformation("PIP {PIPId} initiated for employee {EmployeeId} by {InitiatorId}.",
             createdPip.Id, createdPip.EmployeeId, createdPip.InitiatorId);
 
         return (createdPip, null);

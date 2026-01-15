@@ -140,6 +140,9 @@ try
 catch (Exception ex)
 {
     Program.Log.HostTerminated(bootstrapLogger, ex, "Performance Service");
+    // Force flush to ensure Aspire captures the error before process exits
+    Console.Out.Flush();
+    Console.Error.Flush();
     throw;
 }
 finally

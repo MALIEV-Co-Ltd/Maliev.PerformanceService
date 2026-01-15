@@ -37,7 +37,7 @@ public class EmployeeServiceClient : IEmployeeServiceClient
         try
         {
             var employee = await _httpClient.GetFromJsonAsync<EmployeeDto>($"/api/v1/employees/{employeeId}", cancellationToken);
-            
+
             if (employee != null)
             {
                 var cacheOptions = new DistributedCacheEntryOptions

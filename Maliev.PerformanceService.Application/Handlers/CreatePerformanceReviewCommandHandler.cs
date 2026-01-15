@@ -81,7 +81,7 @@ public class CreatePerformanceReviewCommandHandler
         var createdReview = await _repository.CreateAsync(review, cancellationToken);
 
         // TODO: Publish event
-        
+
         return (createdReview, null);
     }
 }

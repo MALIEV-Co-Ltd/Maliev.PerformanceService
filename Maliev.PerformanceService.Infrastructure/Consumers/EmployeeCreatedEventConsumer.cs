@@ -24,11 +24,11 @@ public class EmployeeCreatedEventConsumer : IConsumer<EmployeeCreatedEvent>
     public Task Consume(ConsumeContext<EmployeeCreatedEvent> context)
     {
         var payload = context.Message.Payload;
-        _logger.LogInformation("Employee created: {EmployeeId}, EmployeeNumber: {EmployeeNumber}.", 
+        _logger.LogInformation("Employee created: {EmployeeId}, EmployeeNumber: {EmployeeNumber}.",
             payload.EmployeeId, payload.EmployeeNumber);
-        
+
         // Additional logic like caching or initializing settings can be added here.
-        
+
         return Task.CompletedTask;
     }
 }

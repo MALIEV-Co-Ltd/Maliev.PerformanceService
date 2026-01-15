@@ -51,7 +51,7 @@ public class SubmitPerformanceReviewCommandHandler
         }
 
         // TODO: Authorization check - requesting user must be the manager of the employee
-        
+
         review.ManagerAssessment = command.ManagerAssessment;
         review.OverallRating = command.OverallRating;
         review.Status = ReviewStatus.Submitted;
@@ -60,7 +60,7 @@ public class SubmitPerformanceReviewCommandHandler
         await _repository.UpdateAsync(review, cancellationToken);
 
         // TODO: Notify employee
-        
+
         return (review, null);
     }
 }

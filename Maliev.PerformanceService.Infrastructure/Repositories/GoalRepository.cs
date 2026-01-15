@@ -49,7 +49,7 @@ public class GoalRepository : IGoalRepository
         query = query.OrderBy(x => x.Id);
 
         var items = await query.Take(limit + 1).ToListAsync(cancellationToken);
-        
+
         Guid? nextCursor = null;
         if (items.Count > limit)
         {

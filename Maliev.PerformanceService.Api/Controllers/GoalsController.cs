@@ -80,7 +80,7 @@ public class GoalsController : ControllerBase
     {
         var query = new GetGoalsQuery(employeeId, cursor, limit, GetUserId());
         var (items, nextCursor) = await _getGoalsHandler.HandleAsync(query);
-        
+
         Response.Headers["X-Next-Cursor"] = nextCursor?.ToString();
         return Ok(items.Select(MapToDto));
     }

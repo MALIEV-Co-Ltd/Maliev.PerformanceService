@@ -80,12 +80,12 @@ public class SubmitFeedbackCommandHandler
         var typeCount = await _feedbackRepository.GetFeedbackCountByTypeAsync(command.PerformanceReviewId, (int)command.FeedbackType, cancellationToken);
         if (command.IsAnonymous && typeCount == 0)
         {
-            _logger.LogInformation("Anonymity warning: Only one provider of type {FeedbackType} for review {ReviewId}. Anonymity may be compromised.", 
+            _logger.LogInformation("Anonymity warning: Only one provider of type {FeedbackType} for review {ReviewId}. Anonymity may be compromised.",
                 command.FeedbackType, command.PerformanceReviewId);
         }
 
         var createdFeedback = await _feedbackRepository.CreateAsync(feedback, cancellationToken);
-        _logger.LogInformation("Feedback {FeedbackId} submitted for review {ReviewId} by user {UserId}.", 
+        _logger.LogInformation("Feedback {FeedbackId} submitted for review {ReviewId} by user {UserId}.",
             createdFeedback.Id, command.PerformanceReviewId, command.ProviderId);
 
         return (createdFeedback, null);
