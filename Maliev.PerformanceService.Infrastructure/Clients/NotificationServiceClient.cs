@@ -1,5 +1,5 @@
-using System.Net.Http.Json;
 using Maliev.PerformanceService.Application.Interfaces;
+using System.Net.Http.Json;
 
 namespace Maliev.PerformanceService.Infrastructure.Clients;
 

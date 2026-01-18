@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using Maliev.PerformanceService.Api.DTOs;
 using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Maliev.PerformanceService.Api.Controllers;
 

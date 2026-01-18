@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Maliev.PerformanceService.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Maliev.PerformanceService.Api.DTOs;
 
