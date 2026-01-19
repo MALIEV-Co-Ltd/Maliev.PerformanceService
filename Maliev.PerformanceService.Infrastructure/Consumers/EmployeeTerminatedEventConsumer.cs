@@ -1,6 +1,6 @@
+using Maliev.MessagingContracts.Generated;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.MessagingContracts.Generated;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 

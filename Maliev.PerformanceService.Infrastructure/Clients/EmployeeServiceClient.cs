@@ -1,6 +1,6 @@
-using System.Net.Http.Json;
 using Maliev.PerformanceService.Application.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Maliev.PerformanceService.Infrastructure.Clients;

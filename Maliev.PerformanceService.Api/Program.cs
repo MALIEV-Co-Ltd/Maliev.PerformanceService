@@ -2,13 +2,11 @@ using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Infrastructure.BackgroundServices;
 using Maliev.PerformanceService.Infrastructure.Clients;
+using Maliev.PerformanceService.Infrastructure.Consumers;
 using Maliev.PerformanceService.Infrastructure.Data;
 using Maliev.PerformanceService.Infrastructure.IAM;
 using Maliev.PerformanceService.Infrastructure.Repositories;
-using Maliev.PerformanceService.Infrastructure.Consumers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using MassTransit;
 
 // Initialize bootstrap logging
 using var loggerFactory = LoggerFactory.Create(logBuilder => logBuilder.AddConsole());
