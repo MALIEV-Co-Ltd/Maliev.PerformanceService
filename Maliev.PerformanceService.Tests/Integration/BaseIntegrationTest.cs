@@ -31,22 +31,19 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
     /// <summary>
     /// PostgreSQL container for integration testing.
     /// </summary>
-    protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:18-alpine")
+    protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder().WithName("postgres:18-alpine")
         .Build();
 
     /// <summary>
     /// Redis container for integration testing.
     /// </summary>
-    protected readonly RedisContainer _redisContainer = new RedisBuilder()
-        .WithImage("redis:8.4-alpine")
+    protected readonly RedisContainer _redisContainer = new RedisBuilder().WithName("redis:8.4-alpine")
         .Build();
 
     /// <summary>
     /// RabbitMQ container for integration testing.
     /// </summary>
-    protected readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder()
-        .WithImage("rabbitmq:4.2-alpine")
+    protected readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder().WithName("rabbitmq:4.2-alpine")
         .Build();
 
     /// <summary>

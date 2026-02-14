@@ -43,7 +43,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
     [Fact]
     public async Task GetGoals_ReturnsOk()
     {
-        var employeeId = Guid.NewGuid();
+        var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/goals", new CreateGoalRequest { Description = "G", TargetCompletionDate = DateTime.UtcNow.AddDays(1) });
         
@@ -54,7 +54,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
     [Fact]
     public async Task GetPIPs_ReturnsOk()
     {
-        var employeeId = Guid.NewGuid();
+        var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/pips", new CreatePIPRequest { Reason = "R", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddMonths(1) });
         
@@ -65,7 +65,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
     [Fact]
     public async Task GetReviewById_ReturnsOk()
     {
-        var employeeId = Guid.NewGuid();
+        var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/reviews", new CreatePerformanceReviewRequest { ReviewCycle = ReviewCycle.Annual, ReviewPeriodStart = DateTime.UtcNow, ReviewPeriodEnd = DateTime.UtcNow.AddYears(1) });
         var created = await createResponse.Content.ReadFromJsonSnakeCaseAsync<PerformanceReviewDto>();
@@ -77,7 +77,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
     [Fact]
     public async Task UpdateGoal_ReturnsOk()
     {
-        var employeeId = Guid.NewGuid();
+        var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/goals", new CreateGoalRequest { Description = "G", TargetCompletionDate = DateTime.UtcNow.AddDays(1) });
         var created = await createResponse.Content.ReadFromJsonSnakeCaseAsync<GoalDto>();

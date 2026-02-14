@@ -20,6 +20,9 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
+        
+        // Reset to default manager for these tests
+        TestAuthHandler.UserId = Guid.Empty;
 
         _factory = _factory.WithWebHostBuilder(builder =>
         {
@@ -107,10 +110,14 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/reviews", createRequest);
         var createdReview = await createResponse.Content.ReadFromJsonSnakeCaseAsync<PerformanceReviewDto>();
 
-        // Submit Self-Assessment (transition to SelfAssessmentPending)
+        // Submit Self-Assessment (transition to SelfAssessmentPending) - Must be the employee
+        TestAuthHandler.UserId = employeeId;
         var updateRequest = new UpdatePerformanceReviewRequest { SubmitSelfAssessment = true, SelfAssessment = "Self" };
-        await _client.PutAsJsonSnakeCaseAsync($"/performance/v1/reviews/{createdReview!.Id}", updateRequest);
+        var updateResponse = await _client.PutAsJsonSnakeCaseAsync($"/performance/v1/reviews/{createdReview!.Id}", updateRequest);
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
 
+        // Submit Manager Review - Must be the manager
+        TestAuthHandler.UserId = Guid.Empty;
         var submitRequest = new SubmitPerformanceReviewRequest
         {
             ManagerAssessment = "Good work",
@@ -121,6 +128,11 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
         var response = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/reviews/{createdReview.Id}/submit", submitRequest);
 
         // Assert
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Submit failed with {response.StatusCode}: {content}");
+        }
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var submittedReview = await response.Content.ReadFromJsonSnakeCaseAsync<PerformanceReviewDto>();
         Assert.Equal(ReviewStatus.Submitted, submittedReview!.Status);
