@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Maliev.PerformanceService.Domain\Maliev.PerformanceService.Domain.csproj" />
+    <ProjectReference Include="..\..\Maliev.MessagingContracts\generated\csharp\Maliev.MessagingContracts.csproj" />
   </ItemGroup>
 
 </Project>

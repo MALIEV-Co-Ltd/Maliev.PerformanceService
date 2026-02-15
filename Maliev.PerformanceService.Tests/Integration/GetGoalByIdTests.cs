@@ -57,7 +57,8 @@ public class GetGoalByIdTests : BaseIntegrationTest
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/goals", createRequest);
         var createdGoal = await createResponse.Content.ReadFromJsonSnakeCaseAsync<GoalDto>();
 
-        // Act
+        // Act - Switch to employee to view own goal
+        TestAuthHandler.UserId = employeeId;
         var response = await _client.GetAsync($"/performance/v1/goals/{createdGoal!.Id}");
 
         // Assert

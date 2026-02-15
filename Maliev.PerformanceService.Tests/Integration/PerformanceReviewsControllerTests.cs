@@ -166,7 +166,8 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
         var updateRequest = new UpdatePerformanceReviewRequest { SubmitSelfAssessment = true, SelfAssessment = "Self" };
         await _client.PutAsJsonSnakeCaseAsync($"/performance/v1/reviews/{createdReview!.Id}", updateRequest);
 
-        // Submit Manager Review
+        // Submit Manager Review - Switch to manager user
+        TestAuthHandler.UserId = Guid.Empty;
         var submitRequest = new SubmitPerformanceReviewRequest
         {
             ManagerAssessment = "Good work",
@@ -174,7 +175,8 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
         };
         await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/reviews/{createdReview.Id}/submit", submitRequest);
 
-        // Act - Acknowledge
+        // Act - Acknowledge - Switch back to employee
+        TestAuthHandler.UserId = employeeId;
         var response = await _client.PostAsync($"/performance/v1/reviews/{createdReview.Id}/acknowledge", null);
 
         // Assert

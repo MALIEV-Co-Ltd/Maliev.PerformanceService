@@ -31,19 +31,19 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
     /// <summary>
     /// PostgreSQL container for integration testing.
     /// </summary>
-    protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder().WithImage("postgres:18-alpine")
+    protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:18-alpine")
         .Build();
 
     /// <summary>
     /// Redis container for integration testing.
     /// </summary>
-    protected readonly RedisContainer _redisContainer = new RedisBuilder().WithImage("redis:8.4-alpine")
+    protected readonly RedisContainer _redisContainer = new RedisBuilder("redis:8.4-alpine")
         .Build();
 
     /// <summary>
     /// RabbitMQ container for integration testing.
     /// </summary>
-    protected readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder().WithImage("rabbitmq:4.2-alpine")
+    protected readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder("rabbitmq:4.2-alpine")
         .Build();
 
     /// <summary>
@@ -79,6 +79,8 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Testing");
+                builder.UseSetting("CORS:AllowedOrigins:0", "http://localhost:3000");
+                builder.UseSetting("Features:FailOpenOnIAMError", "true");
 
                 builder.ConfigureTestServices(services =>
                 {
@@ -92,7 +94,7 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
                             ValidateAudience = false,
                             ValidateLifetime = false,
                             ValidateIssuerSigningKey = false,
-                            SignatureValidator = (token, parameters) => new JwtSecurityToken(token)
+                            SignatureValidator = (token, parameters) => new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token)
                         };
                     });
 

@@ -31,7 +31,7 @@ try
 
     // --- 3. Data & Cache ---
     builder.AddPostgresDbContext<PerformanceDbContext>(connectionName: "PerformanceDbContext");
-    builder.AddRedisDistributedCache(instanceName: "performance:");
+    builder.AddStandardCache("performance:"); // Redis + in-memory fallback, memory-optimized
 
     // --- 4. Messaging ---
     builder.AddMassTransitWithRabbitMq(x =>
@@ -50,7 +50,7 @@ try
     builder.Services.AddDataProtection();
 
     // --- 6. API Configuration ---
-    builder.AddDefaultCors();
+    builder.AddStandardCors(); // CORS with fail-fast validation
     builder.AddDefaultApiVersioning();
     builder.AddStandardRateLimiting();
 

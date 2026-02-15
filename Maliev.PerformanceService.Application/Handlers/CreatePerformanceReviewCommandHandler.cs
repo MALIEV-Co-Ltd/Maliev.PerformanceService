@@ -80,7 +80,26 @@ public class CreatePerformanceReviewCommandHandler
 
         var createdReview = await _repository.CreateAsync(review, cancellationToken);
 
-        // TODO: Publish event
+        await _publishEndpoint.Publish(new Maliev.MessagingContracts.Generated.PerformanceReviewCreatedEvent(
+            MessageId: Guid.NewGuid(),
+            MessageName: "PerformanceReviewCreatedEvent",
+            MessageType: Maliev.MessagingContracts.Generated.MessageType.Event,
+            MessageVersion: "1.0.0",
+            PublishedBy: "PerformanceService",
+            ConsumedBy: ["NotificationService", "AnalyticsService"],
+            CorrelationId: Guid.NewGuid(),
+            CausationId: null,
+            OccurredAtUtc: DateTimeOffset.UtcNow,
+            IsPublic: false,
+            Payload: new Maliev.MessagingContracts.Generated.PerformanceReviewCreatedEventPayload(
+                ReviewId: createdReview.Id,
+                EmployeeId: createdReview.EmployeeId,
+                ReviewerId: createdReview.ReviewerId,
+                ReviewCycle: createdReview.ReviewCycle.ToString(),
+                ReviewPeriodStart: new DateTimeOffset(createdReview.ReviewPeriodStart, TimeSpan.Zero),
+                ReviewPeriodEnd: new DateTimeOffset(createdReview.ReviewPeriodEnd, TimeSpan.Zero)
+            )
+        ), cancellationToken);
 
         return (createdReview, null);
     }
