@@ -46,7 +46,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
         var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/goals", new CreateGoalRequest { Description = "G", TargetCompletionDate = DateTime.UtcNow.AddDays(1) });
-        
+
         var response = await _client.GetAsync($"/performance/v1/employees/{employeeId}/goals");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -57,7 +57,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
         var employeeId = BaseIntegrationTest.TestAuthHandler.UserId;
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/pips", new CreatePIPRequest { Reason = "R", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddMonths(1) });
-        
+
         var response = await _client.GetAsync($"/performance/v1/employees/{employeeId}/pips");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -69,7 +69,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/reviews", new CreatePerformanceReviewRequest { ReviewCycle = ReviewCycle.Annual, ReviewPeriodStart = DateTime.UtcNow, ReviewPeriodEnd = DateTime.UtcNow.AddYears(1) });
         var created = await createResponse.Content.ReadFromJsonSnakeCaseAsync<PerformanceReviewDto>();
-        
+
         var response = await _client.GetAsync($"/performance/v1/reviews/{created!.Id}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -81,7 +81,7 @@ public class PerformanceServiceRemainingTests : BaseIntegrationTest
         _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/goals", new CreateGoalRequest { Description = "G", TargetCompletionDate = DateTime.UtcNow.AddDays(1) });
         var created = await createResponse.Content.ReadFromJsonSnakeCaseAsync<GoalDto>();
-        
+
         var response = await _client.PutAsJsonSnakeCaseAsync($"/performance/v1/goals/{created!.Id}/progress", new UpdateGoalProgressRequest { ProgressUpdate = "P", CompletionStatus = GoalStatus.InProgress });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

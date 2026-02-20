@@ -20,7 +20,7 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        
+
         // Reset to default manager for these tests
         TestAuthHandler.UserId = Guid.Empty;
 
@@ -144,7 +144,7 @@ public class PerformanceReviewsControllerTests : BaseIntegrationTest
     {
         // Arrange
         var employeeId = Guid.NewGuid();
-        
+
         // Setup mock auth to be this employee
         TestAuthHandler.UserId = employeeId;
 

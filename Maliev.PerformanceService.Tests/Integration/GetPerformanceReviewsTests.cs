@@ -58,7 +58,7 @@ public class GetPerformanceReviewsTests : BaseIntegrationTest
 
         // Create a review first
         var createResponse = await _client.PostAsJsonSnakeCaseAsync($"/performance/v1/employees/{employeeId}/reviews", createRequest);
-        
+
         // Act - Switch to employee to view own reviews
         TestAuthHandler.UserId = employeeId;
         var response = await _client.GetAsync($"/performance/v1/employees/{employeeId}/reviews");

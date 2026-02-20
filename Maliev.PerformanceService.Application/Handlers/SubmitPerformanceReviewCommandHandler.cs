@@ -53,7 +53,7 @@ public class SubmitPerformanceReviewCommandHandler
         // Authorization check: Only the assigned reviewer (manager) can submit
         if (review.ReviewerId != command.RequestingUserId)
         {
-            _logger.LogWarning("Unauthorized attempt to submit review {ReviewId} by user {UserId}. Expected reviewer {ReviewerId}.", 
+            _logger.LogWarning("Unauthorized attempt to submit review {ReviewId} by user {UserId}. Expected reviewer {ReviewerId}.",
                 command.ReviewId, command.RequestingUserId, review.ReviewerId);
             return (null, "You are not authorized to submit this review.");
         }

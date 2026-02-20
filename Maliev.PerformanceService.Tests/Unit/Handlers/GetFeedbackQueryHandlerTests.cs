@@ -31,7 +31,7 @@ public class GetFeedbackQueryHandlerTests
         var reviewId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId };
-        
+
         var feedbackItems = new List<ReviewFeedback>
         {
             new ReviewFeedback { FeedbackType = FeedbackType.Peer, Feedback = "F1", IsAnonymous = false, ProviderId = Guid.NewGuid() },
@@ -59,7 +59,7 @@ public class GetFeedbackQueryHandlerTests
         var reviewId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId };
-        
+
         var feedbackItems = new List<ReviewFeedback>
         {
             new ReviewFeedback { FeedbackType = FeedbackType.Peer, Feedback = "Secret", IsAnonymous = true, ProviderId = Guid.NewGuid() }
@@ -86,7 +86,7 @@ public class GetFeedbackQueryHandlerTests
         var reviewId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId };
-        
+
         var feedbackItems = new List<ReviewFeedback>
         {
             new ReviewFeedback { FeedbackType = FeedbackType.Peer, Feedback = "Secret 1", IsAnonymous = true, ProviderId = Guid.NewGuid() },

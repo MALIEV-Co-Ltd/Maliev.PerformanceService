@@ -15,16 +15,16 @@ public class DomainEventTests
         var start = DateTime.UtcNow;
         var end = DateTime.UtcNow.AddYears(1);
         var created = DateTime.UtcNow;
-        
+
         var @event = new PerformanceReviewCreatedEvent(
-            reviewId, 
-            employeeId, 
-            reviewerId, 
-            ReviewCycle.Annual, 
-            start, 
-            end, 
+            reviewId,
+            employeeId,
+            reviewerId,
+            ReviewCycle.Annual,
+            start,
+            end,
             created);
-        
+
         Assert.Equal(reviewId, @event.ReviewId);
         Assert.Equal(employeeId, @event.EmployeeId);
         Assert.Equal(reviewerId, @event.ReviewerId);
@@ -36,13 +36,13 @@ public class DomainEventTests
         var reviewId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var date = DateTime.UtcNow;
-        
+
         var @event = new PerformanceReviewSubmittedEvent(
-            reviewId, 
-            employeeId, 
-            PerformanceRating.ExceedsExpectations, 
+            reviewId,
+            employeeId,
+            PerformanceRating.ExceedsExpectations,
             date);
-        
+
         Assert.Equal(reviewId, @event.ReviewId);
         Assert.Equal(PerformanceRating.ExceedsExpectations, @event.OverallRating);
     }
@@ -53,13 +53,13 @@ public class DomainEventTests
         var goalId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var date = DateTime.UtcNow;
-        
+
         var @event = new PerformanceGoalCompletedEvent(
-            goalId, 
-            employeeId, 
-            "Goal Description", 
+            goalId,
+            employeeId,
+            "Goal Description",
             date);
-        
+
         Assert.Equal(goalId, @event.GoalId);
         Assert.Equal("Goal Description", @event.Description);
     }
@@ -72,15 +72,15 @@ public class DomainEventTests
         var initiatorId = Guid.NewGuid();
         var start = DateTime.UtcNow;
         var end = DateTime.UtcNow.AddMonths(3);
-        
+
         var @event = new PerformancePIPInitiatedEvent(
-            pipId, 
-            employeeId, 
-            initiatorId, 
-            start, 
-            end, 
+            pipId,
+            employeeId,
+            initiatorId,
+            start,
+            end,
             "Reason");
-        
+
         Assert.Equal(pipId, @event.PIPId);
         Assert.Equal(initiatorId, @event.InitiatorId);
     }
@@ -91,13 +91,13 @@ public class DomainEventTests
         var pipId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
         var date = DateTime.UtcNow;
-        
+
         var @event = new PIPCompletedEvent(
-            pipId, 
-            employeeId, 
-            PIPOutcome.Successful, 
+            pipId,
+            employeeId,
+            PIPOutcome.Successful,
             date);
-        
+
         Assert.Equal(pipId, @event.PIPId);
         Assert.Equal(PIPOutcome.Successful, @event.Outcome);
     }
