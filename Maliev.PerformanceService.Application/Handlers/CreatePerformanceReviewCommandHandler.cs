@@ -3,6 +3,8 @@ using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Application.Validators;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
+using Maliev.MessagingContracts.Generated;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 
 namespace Maliev.PerformanceService.Application.Handlers;
@@ -80,18 +82,18 @@ public class CreatePerformanceReviewCommandHandler
 
         var createdReview = await _repository.CreateAsync(review, cancellationToken);
 
-        await _publishEndpoint.Publish(new Maliev.MessagingContracts.Generated.PerformanceReviewCreatedEvent(
+        await _publishEndpoint.Publish(new PerformanceReviewCreatedEvent(
             MessageId: Guid.NewGuid(),
-            MessageName: "PerformanceReviewCreatedEvent",
-            MessageType: Maliev.MessagingContracts.Generated.MessageType.Event,
+            MessageName: nameof(PerformanceReviewCreatedEvent),
+            MessageType: MessageType.Event,
             MessageVersion: "1.0.0",
             PublishedBy: "PerformanceService",
-            ConsumedBy: ["NotificationService", "AnalyticsService"],
+            ConsumedBy: new List<string> { "NotificationService", "AnalyticsService" },
             CorrelationId: Guid.NewGuid(),
             CausationId: null,
             OccurredAtUtc: DateTimeOffset.UtcNow,
             IsPublic: false,
-            Payload: new Maliev.MessagingContracts.Generated.PerformanceReviewCreatedEventPayload(
+            Payload: new PerformanceReviewCreatedEventPayload(
                 ReviewId: createdReview.Id,
                 EmployeeId: createdReview.EmployeeId,
                 ReviewerId: createdReview.ReviewerId,

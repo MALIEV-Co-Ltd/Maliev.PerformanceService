@@ -2,7 +2,8 @@ using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts.Generated;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -68,10 +69,23 @@ public class AcknowledgePerformanceReviewCommandHandler
         await _repository.UpdateAsync(review);
 
         await _publishEndpoint.Publish(new PerformanceReviewSubmittedEvent(
-            review.Id,
-            review.EmployeeId,
-            review.OverallRating,
-            review.AcknowledgedDate.Value));
+            MessageId: Guid.NewGuid(),
+            MessageName: nameof(PerformanceReviewSubmittedEvent),
+            MessageType: MessageType.Event,
+            MessageVersion: "1.0.0",
+            PublishedBy: "PerformanceService",
+            ConsumedBy: Array.Empty<string>(),
+            CorrelationId: review.Id,
+            CausationId: null,
+            OccurredAtUtc: DateTimeOffset.UtcNow,
+            IsPublic: false,
+            Payload: new PerformanceReviewSubmittedEventPayload(
+                ReviewId: review.Id,
+                EmployeeId: review.EmployeeId,
+                OverallRating: (int)(review.OverallRating ?? 0),
+                SubmittedDate: new DateTimeOffset(review.AcknowledgedDate.Value, TimeSpan.Zero)
+            )
+        ));
 
         _logger.LogInformation("Performance review {ReviewId} acknowledged by employee {EmployeeId}",
             review.Id, review.EmployeeId);
