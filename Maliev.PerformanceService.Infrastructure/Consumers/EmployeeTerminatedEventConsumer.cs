@@ -1,5 +1,5 @@
 using Maliev.MessagingContracts.Contracts.Employee;
-using Maliev.MessagingContracts.Generated;
+using Maliev.MessagingContracts;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Enums;
 using MassTransit;

@@ -1,5 +1,5 @@
 using Maliev.MessagingContracts.Contracts.Performance;
-using Maliev.MessagingContracts.Generated;
+using Maliev.MessagingContracts;
 using Maliev.PerformanceService.Domain.Enums;
 using Xunit;
 
