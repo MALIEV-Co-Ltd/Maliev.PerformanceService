@@ -83,4 +83,153 @@ public class UpdatePerformanceReviewCommandHandlerTests
         Assert.NotNull(result.Review.SubmittedDate);
         _repositoryMock.Verify(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default), Times.Once);
     }
+
+    [Fact]
+    public async Task HandleAsync_EmployeeUpdatesSelfAssessment_Success()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, Status = ReviewStatus.Draft };
+        var command = new UpdatePerformanceReviewCommand(reviewId, "My self assessment", null, false, employeeId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+        _repositoryMock.Setup(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default)).ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result.Review);
+        Assert.Equal("My self assessment", result.Review.SelfAssessment);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ManagerUpdatesManagerAssessment_Success()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var managerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = managerId, Status = ReviewStatus.Draft };
+        var command = new UpdatePerformanceReviewCommand(reviewId, null, "Manager feedback", false, managerId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+        _repositoryMock.Setup(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default)).ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result.Review);
+        Assert.Equal("Manager feedback", result.Review.ManagerAssessment);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_UnauthorizedUser_ReturnsError()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var reviewerId = Guid.NewGuid();
+        var unauthorizedUserId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = reviewerId, Status = ReviewStatus.Draft };
+        var command = new UpdatePerformanceReviewCommand(reviewId, "Hack attempt", null, false, unauthorizedUserId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.Null(result.Review);
+        Assert.Equal("You are not authorized to update this review.", result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_EmployeeTryingToUpdateManagerAssessment_ReturnsError()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var managerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = managerId, Status = ReviewStatus.Draft };
+        var command = new UpdatePerformanceReviewCommand(reviewId, null, "Trying to set manager feedback", false, employeeId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.Null(result.Review);
+        Assert.Equal("Only the assigned reviewer can update the manager assessment.", result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ManagerTryingToUpdateSelfAssessment_ReturnsError()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var managerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = managerId, Status = ReviewStatus.Draft };
+        var command = new UpdatePerformanceReviewCommand(reviewId, "Trying to set self assessment", null, false, managerId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.Null(result.Review);
+        Assert.Equal("Only the employee can update the self-assessment.", result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SubmitSelfAssessment_NotifiesManager()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var reviewerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = reviewerId, Status = ReviewStatus.Draft, SelfAssessment = "My assessment" };
+        var command = new UpdatePerformanceReviewCommand(reviewId, "Updated assessment", null, true, employeeId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+        _repositoryMock.Setup(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default)).ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
+        _notificationServiceMock.Setup(x => x.SendReviewReminderAsync(reviewerId, reviewId, "ManagerReview", default)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result.Review);
+        _notificationServiceMock.Verify(x => x.SendReviewReminderAsync(reviewerId, reviewId, "ManagerReview", default), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleAsync_SubmitSelfAssessment_NotificationFails_DoesNotFailUpdate()
+    {
+        // Arrange
+        var reviewId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+        var reviewerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, EmployeeId = employeeId, ReviewerId = reviewerId, Status = ReviewStatus.Draft, SelfAssessment = "My assessment" };
+        var command = new UpdatePerformanceReviewCommand(reviewId, "Updated assessment", null, true, employeeId);
+
+        _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
+        _repositoryMock.Setup(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default)).ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
+        _notificationServiceMock.Setup(x => x.SendReviewReminderAsync(reviewerId, reviewId, "ManagerReview", default))
+            .ThrowsAsync(new Exception("Notification service down"));
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result.Review);
+        Assert.Null(result.Error);
+    }
 }
