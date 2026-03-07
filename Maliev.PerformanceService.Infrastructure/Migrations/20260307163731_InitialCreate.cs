@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -27,7 +28,8 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     outcome = table.Column<int>(type: "integer", nullable: true),
                     extension_count = table.Column<int>(type: "integer", nullable: false),
                     created_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -52,7 +54,9 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     submitted_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     acknowledged_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    is_archived = table.Column<bool>(type: "boolean", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -74,7 +78,8 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     progress_updates = table.Column<string>(type: "text", nullable: true),
                     completion_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    modified_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -99,7 +104,8 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     feedback = table.Column<string>(type: "text", nullable: false),
                     is_anonymous = table.Column<bool>(type: "boolean", nullable: false),
                     submitted_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    created_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
