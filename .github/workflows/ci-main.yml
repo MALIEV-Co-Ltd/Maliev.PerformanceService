@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -68,7 +69,7 @@ jobs:
         run: |
           cd maliev-gitops/3-apps/maliev-performance-service/overlays/production
           kustomize edit set image \
-            asia-southeast1-docker.pkg.dev/maliev-website/maliev-website-artifact/maliev-performance-service=\
+            asia-southeast1-docker.pkg.dev/maliev-website/maliev-website-artifact-prod/maliev-performance-service=\
           asia-southeast1-docker.pkg.dev/maliev-website/maliev-website-artifact-prod/maliev-performance-service:${{ github.sha }}
 
       - name: Create Pull Request

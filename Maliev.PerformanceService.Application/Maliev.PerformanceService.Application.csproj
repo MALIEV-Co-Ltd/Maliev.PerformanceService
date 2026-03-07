@@ -9,13 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit.Abstractions" Version="[8.5.7, 9.0.0)" />
+    <PackageReference Include="MassTransit.Abstractions" Version="[8.5.8, 9.0.0)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Maliev.PerformanceService.Domain\Maliev.PerformanceService.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GITHUB_ACTIONS)' != 'true'">
     <ProjectReference Include="..\..\Maliev.MessagingContracts\generated\csharp\Maliev.MessagingContracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <PackageReference Include="Maliev.MessagingContracts" Version="$(SharedLibraryVersion)" />
   </ItemGroup>
 
 </Project>

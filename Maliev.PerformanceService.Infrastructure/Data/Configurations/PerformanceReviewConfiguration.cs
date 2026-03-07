@@ -23,6 +23,7 @@ public class PerformanceReviewConfiguration : IEntityTypeConfiguration<Performan
         builder.Property(x => x.ReviewPeriodEnd).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.CreatedDate).IsRequired();
+        builder.Property(x => x.IsArchived).IsRequired();
 
         builder.HasIndex(x => x.EmployeeId).HasDatabaseName("idx_perf_reviews_employee");
         builder.HasIndex(x => x.ReviewerId).HasDatabaseName("idx_perf_reviews_reviewer");
@@ -32,5 +33,10 @@ public class PerformanceReviewConfiguration : IEntityTypeConfiguration<Performan
         // because SQL level overlapping checks are complex (start1 < end2 AND start2 < end1).
         // However, we can add a check constraint for start < end.
         builder.ToTable(t => t.HasCheckConstraint("CK_PerformanceReview_Period", "review_period_start < review_period_end"));
+
+        builder.Property<uint>("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }
