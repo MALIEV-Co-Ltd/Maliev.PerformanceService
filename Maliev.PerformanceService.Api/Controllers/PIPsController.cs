@@ -1,8 +1,10 @@
+using Asp.Versioning;
+using Maliev.Aspire.ServiceDefaults.Authorization;
 using Maliev.PerformanceService.Api.DTOs;
 using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Queries;
-using Microsoft.AspNetCore.Authorization;
+using Maliev.PerformanceService.Domain.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -11,9 +13,9 @@ namespace Maliev.PerformanceService.Api.Controllers;
 /// <summary>
 /// Controller for managing Performance Improvement Plans (PIPs).
 /// </summary>
-[Authorize]
 [ApiController]
-[Route("performance/v1")]
+[ApiVersion("1.0")]
+[Route("performance/v{version:apiVersion}")]
 public class PIPsController : ControllerBase
 {
     private readonly CreatePIPCommandHandler _createHandler;
@@ -47,6 +49,7 @@ public class PIPsController : ControllerBase
     /// <param name="request">The creation request.</param>
     /// <returns>A 201 Created response with the new PIP.</returns>
     [HttpPost("employees/{employeeId}/pips")]
+    [RequirePermission(PerformancePermissions.Admin)]
     public async Task<IActionResult> CreatePIP(Guid employeeId, [FromBody] CreatePIPRequest request)
     {
         var command = new CreatePIPCommand(
@@ -73,6 +76,7 @@ public class PIPsController : ControllerBase
     /// <param name="employeeId">The employee identifier.</param>
     /// <returns>A collection of PIPs.</returns>
     [HttpGet("employees/{employeeId}/pips")]
+    [RequirePermission(PerformancePermissions.Read)]
     public async Task<IActionResult> GetPIPs(Guid employeeId)
     {
         var query = new GetPIPsQuery(employeeId, GetUserId());
@@ -87,6 +91,7 @@ public class PIPsController : ControllerBase
     /// <param name="request">The update request.</param>
     /// <returns>The updated PIP.</returns>
     [HttpPut("pips/{pipId}")]
+    [RequirePermission(PerformancePermissions.Update)]
     public async Task<IActionResult> UpdatePIP(Guid pipId, [FromBody] UpdatePIPRequest request)
     {
         var command = new UpdatePIPCommand(pipId, request.CheckInNote ?? "", GetUserId());
@@ -106,6 +111,7 @@ public class PIPsController : ControllerBase
     /// <param name="request">The outcome request.</param>
     /// <returns>The updated PIP.</returns>
     [HttpPost("pips/{pipId}/outcome")]
+    [RequirePermission(PerformancePermissions.Admin)]
     public async Task<IActionResult> RecordOutcome(Guid pipId, [FromBody] RecordPIPOutcomeRequest request)
     {
         var command = new RecordPIPOutcomeCommand(pipId, request.Outcome, request.ExtendedEndDate, GetUserId());

@@ -1,8 +1,10 @@
+using Asp.Versioning;
+using Maliev.Aspire.ServiceDefaults.Authorization;
 using Maliev.PerformanceService.Api.DTOs;
 using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Queries;
-using Microsoft.AspNetCore.Authorization;
+using Maliev.PerformanceService.Domain.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -11,9 +13,9 @@ namespace Maliev.PerformanceService.Api.Controllers;
 /// <summary>
 /// Controller for managing performance reviews.
 /// </summary>
-[Authorize]
 [ApiController]
-[Route("performance/v1")]
+[ApiVersion("1.0")]
+[Route("performance/v{version:apiVersion}")]
 public class PerformanceReviewsController : ControllerBase
 {
     private readonly CreatePerformanceReviewCommandHandler _createHandler;
@@ -49,6 +51,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="request">The creation request details.</param>
     /// <returns>The created review details.</returns>
     [HttpPost("employees/{employeeId}/reviews")]
+    [RequirePermission(PerformancePermissions.Create)]
     [ProducesResponseType(typeof(PerformanceReviewDto), 201)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> CreateReview(Guid employeeId, [FromBody] CreatePerformanceReviewRequest request)
@@ -76,6 +79,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="employeeId">The employee identifier.</param>
     /// <returns>A list of performance reviews.</returns>
     [HttpGet("employees/{employeeId}/reviews")]
+    [RequirePermission(PerformancePermissions.Read)]
     [ProducesResponseType(typeof(IEnumerable<PerformanceReviewDto>), 200)]
     public async Task<IActionResult> GetReviews(Guid employeeId)
     {
@@ -90,6 +94,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="reviewId">The performance review identifier.</param>
     /// <returns>The performance review details.</returns>
     [HttpGet("reviews/{reviewId}")]
+    [RequirePermission(PerformancePermissions.Read)]
     [ProducesResponseType(typeof(PerformanceReviewDto), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetReviewById(Guid reviewId)
@@ -110,6 +115,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="request">The update request details.</param>
     /// <returns>The updated performance review details.</returns>
     [HttpPut("reviews/{reviewId}")]
+    [RequirePermission(PerformancePermissions.Update)]
     [ProducesResponseType(typeof(PerformanceReviewDto), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> UpdateReview(Guid reviewId, [FromBody] UpdatePerformanceReviewRequest request)
@@ -137,6 +143,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="request">The submission request details.</param>
     /// <returns>The updated performance review details.</returns>
     [HttpPost("reviews/{reviewId}/submit")]
+    [RequirePermission(PerformancePermissions.Update)]
     [ProducesResponseType(typeof(PerformanceReviewDto), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> SubmitReview(Guid reviewId, [FromBody] SubmitPerformanceReviewRequest request)
@@ -162,6 +169,7 @@ public class PerformanceReviewsController : ControllerBase
     /// <param name="reviewId">The performance review identifier.</param>
     /// <returns>The updated performance review details.</returns>
     [HttpPost("reviews/{reviewId}/acknowledge")]
+    [RequirePermission(PerformancePermissions.Update)]
     [ProducesResponseType(typeof(PerformanceReviewDto), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> AcknowledgeReview(Guid reviewId)
