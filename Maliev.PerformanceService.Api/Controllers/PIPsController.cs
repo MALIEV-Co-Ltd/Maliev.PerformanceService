@@ -14,7 +14,7 @@ namespace Maliev.PerformanceService.Api.Controllers;
 /// Controller for managing Performance Improvement Plans (PIPs).
 /// </summary>
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion("1")]
 [Route("performance/v{version:apiVersion}")]
 public class PIPsController : ControllerBase
 {
