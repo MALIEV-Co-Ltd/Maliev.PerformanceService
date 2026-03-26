@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using Maliev.PerformanceService.Domain.Authorization;
 using Maliev.PerformanceService.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -91,7 +92,15 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, UserId.ToString()) };
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, UserId.ToString()),
+                new Claim("permissions", PerformancePermissions.Admin),
+                new Claim("permissions", PerformancePermissions.Read),
+                new Claim("permissions", PerformancePermissions.Update),
+                new Claim("permissions", PerformancePermissions.Create),
+                new Claim("permissions", PerformancePermissions.Feedback)
+            };
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, "Test");
