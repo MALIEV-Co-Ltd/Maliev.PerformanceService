@@ -11,45 +11,75 @@ Follow these guidelines to ensure consistency, quality, and adherence to project
 - **Messaging**: RabbitMQ (MassTransit)
 
 ### Build & Test
-- **Build Solution**:
-  ```bash
-  dotnet build
-  ```
-- **Run All Tests**:
-  ```bash
-  dotnet test
-  ```
-- **Run Single Test**:
-  Use the `FullyQualifiedName` filter.
-  ```bash
-  dotnet test --filter "FullyQualifiedName~Maliev.PerformanceService.Tests.Unit.Handlers.CreateGoalCommandHandlerTests.HandleAsync_ValidCommand_CreatesGoal"
-  ```
-- **Format Code**:
-  ```bash
-  dotnet format
-  ```
+
+All commands run from within the service directory (`B:\maliev\Maliev.PerformanceService`).
+
+```powershell
+# Build (treats warnings as errors — all must be fixed)
+dotnet build Maliev.PerformanceService.slnx
+
+# Run all tests
+dotnet test Maliev.PerformanceService.slnx --verbosity normal
+
+# Run a single test method
+dotnet test --filter "FullyQualifiedName~CreateGoalCommandHandlerTests.HandleAsync_ValidCommand_CreatesGoal"
+
+# Run all tests in a class
+dotnet test --filter "FullyQualifiedName~CreateGoalCommandHandlerTests"
+
+# Run with code coverage
+dotnet test Maliev.PerformanceService.slnx --collect:"XPlat Code Coverage"
+
+# Format check
+dotnet format Maliev.PerformanceService.slnx
+
+# EF Core migrations (Infrastructure project only)
+dotnet ef migrations add <Name> --project Maliev.PerformanceService.Infrastructure --startup-project Maliev.PerformanceService.Infrastructure
+```
 
 ## 2. Project Structure
 
-- **Api** (`Maliev.PerformanceService.Api`): REST API Controllers, DTOs, Program.cs.
-- **Application** (`Maliev.PerformanceService.Application`): Core business logic, CQRS (Commands, Queries, Handlers), Validators, Interfaces.
-- **Domain** (`Maliev.PerformanceService.Domain`): Entities, Enums, Domain Events.
-- **Infrastructure** (`Maliev.PerformanceService.Infrastructure`): EF Core Context, Repositories, External Services implementations, Background Services.
-- **Tests** (`Maliev.PerformanceService.Tests`):
-  - `Unit/`: Logic tests using Moq and xUnit.
-  - `Integration/`: End-to-end tests using Testcontainers (Real Postgres/Redis/RabbitMQ).
+```
+Maliev.PerformanceService/
+├── Maliev.PerformanceService.Api/           # Controllers, Consumers, Middleware
+├── Maliev.PerformanceService.Application/   # Use cases, DTOs, Interfaces, Handlers
+├── Maliev.PerformanceService.Domain/        # Entities, value objects, domain interfaces
+├── Maliev.PerformanceService.Infrastructure/ # EF Core DbContext, repositories, HTTP clients
+├── Maliev.PerformanceService.Tests/         # Unit + Integration tests (xUnit)
+│   ├── Unit/                                # Logic tests using Moq and xUnit
+│   └── Integration/                         # E2E tests using Testcontainers (Postgres/Redis/RabbitMQ)
+├── Directory.Build.props                    # Central package versioning
+└── Maliev.PerformanceService.slnx           # Solution file (.slnx preferred over .sln)
+```
 
 ## 3. Code Style & Conventions
 
-### General
-- **Formatting**: Follow standard .NET conventions.
-- **Namespaces**: `Maliev.PerformanceService.{Layer}.{Feature}`.
-- **Classes**: PascalCase.
-- **Interfaces**: PascalCase with `I` prefix (e.g., `IGoalRepository`).
-- **Async**: Use `async/await` for all I/O bound operations. Append `Async` to method names (e.g., `CreateAsync`).
-- **Documentation**: Use XML comments (`/// <summary>`) for all public members, classes, and interfaces.
+### C# Naming & Formatting
+- **Namespaces**: File-scoped (`namespace Maliev.PerformanceService.Domain.Entities;`)
+- **Classes/Methods/Properties**: `PascalCase`
+- **Private fields**: `_camelCase` (underscore prefix)
+- **Parameters/locals**: `camelCase`
+- **Async methods**: Suffix with `Async` (e.g., `CreateAsync`)
+- **Interfaces**: Prefix with `I` (e.g., `IGoalRepository`)
+- **Permissions**: GCP-style `{domain}.{plural-resource}.{action}` as `public const string` in a `Permissions` static class
+  - Valid: `performance.goals.create`, `performance.reviews.submit`
+  - Invalid: `performance.goal.create` (singular), `performance.create` (missing resource)
+- **XML docs**: Required on ALL public methods and properties
+- **Nullable**: Enabled (`<Nullable>enable</Nullable>`). Use `?` explicitly
+- **Imports**: System first, then third-party, then local. Alphabetize within groups. Remove unused `using`
+- **Braces**: Allman style (new line) for methods and control structures. Expression-bodied for properties/accessors
+- **Indentation**: 4 spaces, LF line endings, UTF-8, trim trailing whitespace
 
-### CQRS Pattern
+### C# Patterns
+- **DI**: Constructor injection with `private readonly` fields
+- **Controllers**: `[ApiController]`, `[ApiVersion("1")]`, `[Route("performance/v{version:apiVersion}")]`
+- **Logging**: `ILogger<T>` with structured placeholders (never interpolate): `_logger.LogInformation("Creating goal for {EmployeeId}", employeeId)`
+- **Error handling**: Global exception middleware. Return `ProblemDetails` / `ErrorResponse` DTOs. Never expose stack traces
+- **JSON**: Check existing conventions in this service for naming policy
+- **Manual mapping**: Static extension methods (`ToDto()`, `ToEntity()`). AutoMapper is banned
+- **Validation**: `System.ComponentModel.DataAnnotations` on DTOs. FluentValidation is banned
+
+### CQRS Pattern (Service-Specific)
 - **Commands/Queries**: Use `record` types for immutability.
 - **Handlers**:
   - Implement `HandleAsync` methods.
@@ -57,31 +87,41 @@ Follow these guidelines to ensure consistency, quality, and adherence to project
   - **Do not throw exceptions** for known domain/validation errors; return the error string in the tuple.
   - Inject dependencies via constructor (DI).
 
-### Validation
+### Validation (Service-Specific)
 - **Validators**: Use custom validator classes (e.g., `CreateGoalValidator`).
 - **Return Type**: `(bool IsValid, string? Error)`.
 - **Constraint**: **NO FluentValidation**. Use manual checks or Data Annotations where appropriate.
 
-### Domain Modeling
+### Domain Modeling (Service-Specific)
 - **Entities**: Located in Domain layer.
 - **Repositories**: Define interfaces in Application, implement in Infrastructure.
 - **IDs**: Use `Guid` for entity identifiers.
 
-### Error Handling & Logging
-- **Logging**: Inject `ILogger<T>`. Use structured logging (e.g., `_logger.LogInformation("Creating goal for {EmployeeId}", command.EmployeeId)`).
-- **Exceptions**: Reserve exceptions for unexpected system failures. Domain rules should be handled via the result tuple pattern.
+---
 
-## 4. Testing Guidelines
+## Banned Libraries (Build Will Fail)
 
-- **Framework**: xUnit.
-- **Assertions**: Use xUnit `Assert` (e.g., `Assert.NotNull`, `Assert.Equal`). **NO FluentAssertions**.
-- **Unit Tests**:
-  - Mock dependencies using `Moq`.
-  - Locate in `Tests/Unit`.
-- **Integration Tests**:
-  - Use `Testcontainers` for database/messaging.
-  - Do not mock the DbContext; use the real containerized database.
-  - Locate in `Tests/Integration`.
+| Banned | Use Instead |
+|--------|-------------|
+| AutoMapper | Manual mapping extensions |
+| FluentValidation | DataAnnotations or manual validation |
+| FluentAssertions | Standard xUnit `Assert.*` |
+| Swashbuckle/Swagger | Scalar (at `/performance/scalar`) |
+| InMemoryDatabase (EF Core) | Testcontainers with real PostgreSQL |
+
+---
+
+## Testing Rules
+
+- **Framework**: xUnit with standard `Assert` (`Assert.Equal`, `Assert.NotNull`, etc.)
+- **Naming**: `MethodName_StateUnderTest_ExpectedBehavior` or `HTTP_METHOD_Path_Scenario_ExpectedStatus`
+- **Coverage**: Minimum 80% per service
+- **Integration tests**: `BaseIntegrationTestFactory<TProgram, TDbContext>` with Testcontainers (PostgreSQL, Redis, RabbitMQ). Never InMemoryDatabase
+- **System tests** (Tier 3): `AspireTestFixture` with `[Collection("AspireDomainTests")]` — shared AppHost, never one per class
+- **Eventual consistency**: Use `TestHelpers.WaitForAsync`. Never `Task.Delay`
+- **MassTransit consumers**: Must have consumer tests using `AddMassTransitTestHarness()`
+- **Unit Tests**: Mock dependencies using `Moq`. Locate in `Tests/Unit`.
+- **Integration Tests**: Do not mock the DbContext; use the real containerized database. Locate in `Tests/Integration`.
 
 ### Testing Strategy (4-Tier Pyramid Context)
 
@@ -102,25 +142,25 @@ This service's tests cover **Tier 1 (Unit)** and **Tier 2 (Service Integration)*
 
 > Full ecosystem test strategy: `Maliev.Aspire.Tests/TEST_PLAN.md`
 
-## 5. Critical Rules (from CLAUDE.md)
+---
 
-1.  **NO AutoMapper**: Map properties explicitly.
-2.  **NO FluentValidation**: Use manual validation or Data Annotations.
-3.  **NO FluentAssertions**: Use standard `Assert`.
-4.  **Testcontainers**: Mandatory for integration tests.
-5.  **Project Structure**: Keep the flat structure (no `/src` or `/tests` root folders).
+## Mandatory Rules
 
-## 6. Development Workflow for Agents
+- **`TreatWarningsAsErrors = true`**: Zero warnings allowed. No suppression
+- **`[RequirePermission("performance.resources.action")]`**: On all endpoints, not plain `[Authorize]`
+- **API versioning**: All routes versioned (`v1/`)
+- **Service prefix**: Routes prefixed with `/performance`
+- **Scalar docs**: Configured at `/performance/scalar`
+- **Secrets**: Never hardcoded. Use GCP Secret Manager or environment variables
+- **Async/await**: All the way down. Pass `CancellationToken`
+- **EF Core Design package**: Only in Infrastructure project, never in Api
+- **PostgreSQL xmin**: Shadow property only — `entity.Property<uint>("xmin").HasColumnType("xid").IsRowVersion()`. Never add entity property
+- **Temporary files**: Generate in `/temp` folder, clean up afterwards
+- **Project Structure**: Keep the flat structure (no `/src` or `/tests` root folders)
 
-1.  **Read**: Always read relevant files (`CLAUDE.md`, related code) before starting.
-2.  **Plan**: Analyze the task and existing patterns (CQRS, error handling).
-3.  **Implement**: Write code adhering to the styles above.
-4.  **Verify**:
-    - Run `dotnet build`.
-    - Run `dotnet test`.
-    - If modifying logic, add or update tests.
+---
 
-## 7. Example: Creating a Handler
+## Example: Creating a Handler
 
 ```csharp
 public class CreateItemCommandHandler
@@ -146,20 +186,16 @@ public class CreateItemCommandHandler
 }
 ```
 
+---
 
-## Git & Version Control — Mandatory Rules
+## Git Rules
 
-### 🚨 CRITICAL: Always Commit Code Changes (Non-Negotiable)
-- **You MUST commit your changes to the local repository after completing any meaningful unit of work.**
-- **Never accumulate uncommitted changes.** Do not wait until end of session or until something breaks.
-- **Commit early and often** — if a change is meaningful (even a small fix or refactor), commit it.
-- **You do NOT need to push to remote** — local commits are sufficient to protect against accidental loss.
-- **If you are unsure whether to commit, commit anyway.** Extra commits are harmless; lost work is irreversible.
-- This rule applies even if you are just "testing" or "exploring" — use git branches to isolate experimental work and commit those changes too.
+- Each `Maliev.*` folder is an independent git repo. `cd` into it before git commands
+- **Commit early and often** after every meaningful unit of work. Do not accumulate changes
+- **Never use `git checkout` to restore files** — commit first, then `git revert` or `git reset --soft`
+- Feature branches merged to `develop` via PR. Do not push without being asked
 
-### 🚨 CRITICAL: Never Use `git checkout` to Restore Broken Files
-- **NEVER use `git checkout` to restore or recover files.** This operation discards uncommitted changes permanently and will result in data loss.
-- **To undo/recover from broken files: first commit your current changes, then use `git revert` or `git reset --soft` to safely undo.**
+---
 
 ## Database & EF Core — Mandatory Rules
 
@@ -168,7 +204,7 @@ public class CreateItemCommandHandler
 - ✅ It belongs ONLY in the Infrastructure (or Data) project where migrations live
 - Migration commands must target Infrastructure as both project and startup-project (since EF Core Design package is in Infrastructure):
   ```
-  dotnet ef migrations add <Name> --project Maliev.<Domain>Service.Infrastructure --startup-project Maliev.<Domain>Service.Infrastructure
+  dotnet ef migrations add <Name> --project Maliev.PerformanceService.Infrastructure --startup-project Maliev.PerformanceService.Infrastructure
   ```
 
 ### PostgreSQL xmin Concurrency — Mandatory Pattern
@@ -179,3 +215,15 @@ entity.Property<uint>("xmin").HasColumnType("xid").IsRowVersion();
 - ❌ Never use `UseXminAsConcurrencyToken()` (removed in Npgsql EF v7)
 - ❌ Never use entity property `public uint Xmin { get; set; }` or `public uint xmin { get; set; }`
 - ❌ Never use `.Ignore(e => e.Xmin)` — remove the entity property instead
+
+---
+
+## Development Workflow for Agents
+
+1.  **Read**: Always read relevant files (`AGENTS.md`, related code) before starting.
+2.  **Plan**: Analyze the task and existing patterns (CQRS, error handling).
+3.  **Implement**: Write code adhering to the styles above.
+4.  **Verify**:
+    - Run `dotnet build Maliev.PerformanceService.slnx`.
+    - Run `dotnet test Maliev.PerformanceService.slnx --verbosity normal`.
+    - If modifying logic, add or update tests.
