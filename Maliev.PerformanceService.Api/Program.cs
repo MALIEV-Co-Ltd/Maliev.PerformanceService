@@ -100,8 +100,8 @@ try
     builder.Services.AddScoped<Maliev.PerformanceService.Application.Validators.CreatePIPValidator>();
 
     // 8. HTTP Clients
-    builder.AddServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService");
-    builder.AddServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService");
+    builder.AddAuthenticatedServiceClient<IEmployeeServiceClient, EmployeeServiceClient>("EmployeeService", sourceServiceName: "performance");
+    builder.AddAuthenticatedServiceClient<INotificationServiceClient, NotificationServiceClient>("NotificationService", sourceServiceName: "performance");
     builder.AddServiceClient("IAMService");
 
     // 9. Background Services
