@@ -45,37 +45,43 @@ public class CreatePerformanceReviewCommandHandler
     /// <returns>The created review or an error message.</returns>
     public async Task<(PerformanceReview? Review, string? Error)> HandleAsync(CreatePerformanceReviewCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        var normalizedCommand = command with
+        {
+            ReviewPeriodStart = NormalizeToUtc(command.ReviewPeriodStart),
+            ReviewPeriodEnd = NormalizeToUtc(command.ReviewPeriodEnd)
+        };
+
+        var validationResult = await _validator.ValidateAsync(normalizedCommand, cancellationToken);
         if (!validationResult.IsValid)
         {
             return (null, validationResult.Error);
         }
 
-        if (!await _employeeService.ValidateEmployeeExistsAsync(command.EmployeeId, cancellationToken))
+        if (!await _employeeService.ValidateEmployeeExistsAsync(normalizedCommand.EmployeeId, cancellationToken))
         {
             return (null, "Employee not found.");
         }
 
         // Data Volume Limits
-        var count = await _repository.CountByEmployeeIdAsync(command.EmployeeId, cancellationToken);
+        var count = await _repository.CountByEmployeeIdAsync(normalizedCommand.EmployeeId, cancellationToken);
         if (count >= 50)
         {
             return (null, "DATA_VOLUME_LIMIT_REACHED: Maximum of 50 reviews per employee.");
         }
         if (count >= 40)
         {
-            await _notificationService.SendDataVolumeWarningAsync(command.EmployeeId, "PerformanceReview", count, 50, cancellationToken);
+            await _notificationService.SendDataVolumeWarningAsync(normalizedCommand.EmployeeId, "PerformanceReview", count, 50, cancellationToken);
         }
 
         var review = new PerformanceReview
         {
             Id = Guid.NewGuid(),
-            EmployeeId = command.EmployeeId,
+            EmployeeId = normalizedCommand.EmployeeId,
             ReviewerId = Guid.Empty, // Will be set or handled based on logic
-            ReviewCycle = command.ReviewCycle,
-            ReviewPeriodStart = command.ReviewPeriodStart,
-            ReviewPeriodEnd = command.ReviewPeriodEnd,
-            SelfAssessment = command.SelfAssessment,
+            ReviewCycle = normalizedCommand.ReviewCycle,
+            ReviewPeriodStart = normalizedCommand.ReviewPeriodStart,
+            ReviewPeriodEnd = normalizedCommand.ReviewPeriodEnd,
+            SelfAssessment = normalizedCommand.SelfAssessment,
             Status = ReviewStatus.Draft,
             CreatedDate = DateTime.UtcNow
         };
@@ -104,5 +110,15 @@ public class CreatePerformanceReviewCommandHandler
         ), cancellationToken);
 
         return (createdReview, null);
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 }
