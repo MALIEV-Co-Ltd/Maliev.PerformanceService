@@ -23,6 +23,17 @@ The Performance Service enables structured feedback and goal alignment, includin
 
 ## Getting Started
 
+## Validation and release boundary
+
+Pull requests, `main`, `develop`, and `release/v*` tags run the same read-only
+.NET validation workflow. Validation checks out immutable public revisions of
+the MALIEV shared sources and restores only from NuGet.org, so it does not need
+repository secrets or package credentials.
+
+No workflow in this repository publishes images, authenticates to Google
+Cloud, changes GitOps, or deploys to GKE. Release remains pending Aspire owner
+review and must be introduced later as a separate, explicitly approved flow.
+
 ### Prerequisites
 
 - .NET 10.0 SDK

@@ -35,7 +35,7 @@ builder.AddMassTransitWithRabbitMq(x =>
 
 // --- 5. Security ---
 builder.AddJwtAuthentication();
-builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>();
+builder.Services.AddIAMRegistration<PerformanceIAMRegistrationService>("PerformanceService");
 builder.Services.AddDataProtection();
 
 // --- 6. API Configuration ---

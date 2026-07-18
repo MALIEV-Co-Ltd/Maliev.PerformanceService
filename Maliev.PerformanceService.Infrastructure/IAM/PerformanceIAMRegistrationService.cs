@@ -1,5 +1,6 @@
 using Maliev.Aspire.ServiceDefaults.IAM;
 using Maliev.PerformanceService.Domain.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Maliev.PerformanceService.Infrastructure.IAM;
@@ -12,8 +13,12 @@ public class PerformanceIAMRegistrationService : IAMRegistrationService
     /// <summary>
     /// Initializes a new instance of the <see cref="PerformanceIAMRegistrationService"/> class.
     /// </summary>
-    public PerformanceIAMRegistrationService(IHttpClientFactory httpClientFactory, ILogger<PerformanceIAMRegistrationService> logger)
-        : base(httpClientFactory, logger, "PerformanceService")
+    /// <param name="configuration">Application configuration used by the shared IAM registration client.</param>
+    /// <param name="logger">Logger instance.</param>
+    public PerformanceIAMRegistrationService(
+        IConfiguration configuration,
+        ILogger<PerformanceIAMRegistrationService> logger)
+        : base(configuration, logger, "PerformanceService")
     {
     }
 
