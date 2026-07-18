@@ -72,6 +72,23 @@ public sealed class WorkflowContractTests
         }
     }
 
+    [Fact]
+    public void IntegrationTests_SharingProcessEnvironment_AreSerialized()
+    {
+        var integrationRoot = Path.Combine(Root, "Maliev.PerformanceService.Tests", "Integration");
+        var collection = File.ReadAllText(Path.Combine(integrationRoot, "IntegrationTestCollection.cs"));
+
+        Assert.Contains("DisableParallelization = true", collection);
+        foreach (var file in new[]
+        {
+            "FeedbackControllerTests.cs", "GoalsControllerTests.cs",
+            "PerformanceReviewsControllerTests.cs", "PIPsControllerTests.cs",
+        })
+        {
+            Assert.Contains("[Collection(IntegrationTestCollection.Name)]", File.ReadAllText(Path.Combine(integrationRoot, file)));
+        }
+    }
+
     private static void AssertSafe(string text)
     {
         foreach (var value in new[]

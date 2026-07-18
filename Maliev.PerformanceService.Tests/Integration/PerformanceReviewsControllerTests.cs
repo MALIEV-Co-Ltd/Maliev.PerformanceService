@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Maliev.PerformanceService.Tests.Integration;
 
+[Collection(IntegrationTestCollection.Name)]
 public class PerformanceReviewsControllerTests : BaseIntegrationTest
 {
     private readonly Mock<IEmployeeServiceClient> _employeeServiceMock = new();

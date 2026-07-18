@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Maliev.PerformanceService.Tests.Integration;
 
+[Collection(IntegrationTestCollection.Name)]
 public class FeedbackControllerTests : BaseIntegrationTest
 {
     private readonly Mock<IEmployeeServiceClient> _employeeServiceMock = new();
