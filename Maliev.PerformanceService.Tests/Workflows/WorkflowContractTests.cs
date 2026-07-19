@@ -49,6 +49,7 @@ public sealed class WorkflowContractTests
         Assert.Contains("repository: MALIEV-Co-Ltd/Maliev.MessagingContracts", text);
         Assert.Contains("ref: 559a00db0c7920a5247fdff60d4476ad23a9a501", text);
         Assert.Equal(3, text.Split("/p:SharedSourceRoot=../shared", StringSplitOptions.None).Length - 1);
+        Assert.Equal(3, text.Split("/p:GITHUB_ACTIONS=false", StringSplitOptions.None).Length - 1);
         AssertSafe(text);
     }
 
