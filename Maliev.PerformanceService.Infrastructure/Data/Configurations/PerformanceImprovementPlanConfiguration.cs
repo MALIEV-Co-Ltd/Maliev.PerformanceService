@@ -30,5 +30,10 @@ public class PerformanceImprovementPlanConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(x => x.Status).HasDatabaseName("idx_pips_status");
 
         builder.ToTable(t => t.HasCheckConstraint("CK_PIP_DateRange", "start_date < end_date"));
+
+        builder.Property<uint>("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

@@ -28,9 +28,17 @@ public class GetPerformanceReviewByIdQueryHandler
     public async Task<PerformanceReview?> HandleAsync(GetPerformanceReviewByIdQuery query, CancellationToken cancellationToken = default)
     {
         var review = await _repository.GetByIdAsync(query.ReviewId, cancellationToken);
-        
-        // TODO: Authorization check
-        
+        if (review == null)
+        {
+            return null;
+        }
+
+        // Authorization check: Employee see own review, Reviewer (Manager) sees assigned review
+        if (review.EmployeeId != query.RequestingUserId && review.ReviewerId != query.RequestingUserId)
+        {
+            return null;
+        }
+
         return review;
     }
 }

@@ -1,15 +1,13 @@
-namespace Maliev.PerformanceService.Tests.Integration;
-
 using Xunit;
 
+namespace Maliev.PerformanceService.Tests.Integration;
+
 /// <summary>
-/// Serializes integration fixtures because they configure process-wide connection-string environment variables.
+/// Defines a test collection for integration tests.
+/// All tests in this collection will run sequentially and share the same test containers.
 /// </summary>
-[CollectionDefinition(Name, DisableParallelization = true)]
-public sealed class IntegrationTestCollection
+[CollectionDefinition("IntegrationTests", DisableParallelization = true)]
+public class IntegrationTestCollection
 {
-    /// <summary>
-    /// Shared xUnit collection name for container-backed integration tests.
-    /// </summary>
-    public const string Name = "PerformanceService integration tests";
+    // This class is never instantiated. It exists solely to define the collection.
 }

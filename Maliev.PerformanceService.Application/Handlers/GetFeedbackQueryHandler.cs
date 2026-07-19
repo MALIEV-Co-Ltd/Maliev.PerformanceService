@@ -46,13 +46,13 @@ public class GetFeedbackQueryHandler
         // For now, we allow the requesting user if they are the employee or the reviewer.
         if (review.EmployeeId != query.RequestingUserId && review.ReviewerId != query.RequestingUserId)
         {
-            _logger.LogWarning("User {UserId} not authorized to view feedback for review {ReviewId}.", 
+            _logger.LogWarning("User {UserId} not authorized to view feedback for review {ReviewId}.",
                 query.RequestingUserId, query.PerformanceReviewId);
             return Enumerable.Empty<ReviewFeedback>();
         }
 
         var allFeedback = await _feedbackRepository.GetByReviewIdAsync(query.PerformanceReviewId, cancellationToken);
-        
+
         var feedbackList = allFeedback.ToList();
         var result = new List<ReviewFeedback>();
 
@@ -61,11 +61,11 @@ public class GetFeedbackQueryHandler
         foreach (var group in groups)
         {
             var groupItems = group.ToList();
-            
+
             // If only one provider of this type and it's anonymous, suppress it to protect identity
             if (groupItems.Count == 1 && groupItems[0].IsAnonymous)
             {
-                _logger.LogInformation("Suppressing anonymous feedback for review {ReviewId} as only one provider exists for type {FeedbackType}.", 
+                _logger.LogInformation("Suppressing anonymous feedback for review {ReviewId} as only one provider exists for type {FeedbackType}.",
                     query.PerformanceReviewId, group.Key);
                 continue;
             }

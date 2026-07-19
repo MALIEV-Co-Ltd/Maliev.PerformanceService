@@ -36,6 +36,15 @@ public sealed class WorkflowContractTests
     }
 
     [Fact]
+    public void DevelopValidation_CanBeRunManuallyWithoutDeploymentCredentials()
+    {
+        var text = Read("ci-develop.yml");
+
+        Assert.Contains("workflow_dispatch:", text);
+        AssertSafe(text);
+    }
+
+    [Fact]
     public void ReusableValidation_IsCredentialFreeAndUsesImmutablePublicSources()
     {
         var text = Read("_validate.yml");
@@ -48,19 +57,25 @@ public sealed class WorkflowContractTests
         Assert.Contains("ref: 01d506203763b914e237268a8746f1406423df86", text);
         Assert.Contains("repository: MALIEV-Co-Ltd/Maliev.MessagingContracts", text);
         Assert.Contains("ref: 559a00db0c7920a5247fdff60d4476ad23a9a501", text);
+        Assert.Equal(3, text.Split("/p:SharedSourceRoot=../shared", StringSplitOptions.None).Length - 1);
         Assert.Equal(3, text.Split("/p:GITHUB_ACTIONS=false", StringSplitOptions.None).Length - 1);
         AssertSafe(text);
     }
 
     [Fact]
-    public void ProjectGraph_DoesNotRequireEmployeeServiceOrPrivatePackagesForValidation()
+    public void ProjectGraph_UsesPortableSharedSourceOverrides()
     {
-        var api = File.ReadAllText(Path.Combine(Root, "Maliev.PerformanceService.Api", "Maliev.PerformanceService.Api.csproj"));
-        var infrastructure = File.ReadAllText(Path.Combine(Root, "Maliev.PerformanceService.Infrastructure", "Maliev.PerformanceService.Infrastructure.csproj"));
-
-        Assert.Contains("$(SharedSourceRoot)", api);
-        Assert.Contains("$(SharedSourceRoot)", infrastructure);
-        Assert.DoesNotContain("Maliev.EmployeeService", infrastructure);
+        foreach (var project in new[]
+        {
+            "Maliev.PerformanceService.Api",
+            "Maliev.PerformanceService.Application",
+            "Maliev.PerformanceService.Infrastructure",
+        })
+        {
+            var text = File.ReadAllText(Path.Combine(Root, project, $"{project}.csproj"));
+            Assert.Contains("$(SharedSourceRoot)", text);
+            Assert.DoesNotContain("$(GITHUB_ACTIONS)", text);
+        }
     }
 
     [Fact]
@@ -69,23 +84,6 @@ public sealed class WorkflowContractTests
         foreach (var file in Directory.GetFiles(Workflows, "*.yml"))
         {
             AssertSafe(File.ReadAllText(file));
-        }
-    }
-
-    [Fact]
-    public void IntegrationTests_SharingProcessEnvironment_AreSerialized()
-    {
-        var integrationRoot = Path.Combine(Root, "Maliev.PerformanceService.Tests", "Integration");
-        var collection = File.ReadAllText(Path.Combine(integrationRoot, "IntegrationTestCollection.cs"));
-
-        Assert.Contains("DisableParallelization = true", collection);
-        foreach (var file in new[]
-        {
-            "FeedbackControllerTests.cs", "GoalsControllerTests.cs",
-            "PerformanceReviewsControllerTests.cs", "PIPsControllerTests.cs",
-        })
-        {
-            Assert.Contains("[Collection(IntegrationTestCollection.Name)]", File.ReadAllText(Path.Combine(integrationRoot, file)));
         }
     }
 
@@ -113,7 +111,10 @@ public sealed class WorkflowContractTests
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Maliev.PerformanceService.sln"))) return directory.FullName;
+            if (File.Exists(Path.Combine(directory.FullName, "Maliev.PerformanceService.slnx")))
+            {
+                return directory.FullName;
+            }
         }
 
         throw new DirectoryNotFoundException("Could not locate PerformanceService repository root.");

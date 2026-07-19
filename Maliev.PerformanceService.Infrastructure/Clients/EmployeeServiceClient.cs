@@ -1,7 +1,8 @@
-using System.Net.Http.Json;
 using Maliev.PerformanceService.Application.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
+using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Maliev.PerformanceService.Infrastructure.Clients;
 
@@ -36,8 +37,11 @@ public class EmployeeServiceClient : IEmployeeServiceClient
 
         try
         {
-            var employee = await _httpClient.GetFromJsonAsync<EmployeeDto>($"/api/v1/employees/{employeeId}", cancellationToken);
-            
+            var profile = await _httpClient.GetFromJsonAsync<EmployeeProfileResponse>(
+                $"/employee/v1/employees/{employeeId}",
+                cancellationToken);
+            var employee = profile?.ToEmployeeDto();
+
             if (employee != null)
             {
                 var cacheOptions = new DistributedCacheEntryOptions
@@ -67,5 +71,24 @@ public class EmployeeServiceClient : IEmployeeServiceClient
     {
         var employee = await GetEmployeeByIdAsync(employeeId, cancellationToken);
         return employee?.ManagerId == managerId;
+    }
+
+    private sealed record EmployeeProfileResponse(
+        [property: JsonPropertyName("id")] Guid Id,
+        [property: JsonPropertyName("firstName")] string? FirstName,
+        [property: JsonPropertyName("lastName")] string? LastName,
+        [property: JsonPropertyName("email")] string? Email,
+        [property: JsonPropertyName("managerId")] Guid? ManagerId)
+    {
+        public EmployeeDto ToEmployeeDto()
+        {
+            var fullName = string.Join(" ", new[] { FirstName, LastName }.Where(part => !string.IsNullOrWhiteSpace(part)));
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                fullName = Email ?? Id.ToString();
+            }
+
+            return new EmployeeDto(Id, fullName, Email ?? string.Empty, ManagerId);
+        }
     }
 }

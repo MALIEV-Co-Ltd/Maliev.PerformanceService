@@ -18,7 +18,7 @@ public record UpdatePerformanceReviewRequest
     /// </summary>
     [MaxLength(2000)]
     public string? ManagerAssessment { get; init; }
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether to formally submit the self-assessment.
     /// </summary>

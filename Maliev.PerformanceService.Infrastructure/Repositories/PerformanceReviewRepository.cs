@@ -106,4 +106,23 @@ public class PerformanceReviewRepository : IPerformanceReviewRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
+
+    /// <inheritdoc/>
+    public async Task CloseAllActiveReviewsForEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        await _context.PerformanceReviews
+            .Where(x => x.EmployeeId == employeeId && x.Status != ReviewStatus.Completed)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.Status, ReviewStatus.Completed)
+                .SetProperty(p => p.ModifiedDate, DateTime.UtcNow),
+                cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<PerformanceReview>> GetPendingRemindersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PerformanceReviews
+            .Where(x => x.Status == ReviewStatus.Draft || x.Status == ReviewStatus.SelfAssessmentPending)
+            .ToListAsync(cancellationToken);
+    }
 }

@@ -3,6 +3,8 @@ using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Application.Validators;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
+using Maliev.MessagingContracts;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 
 namespace Maliev.PerformanceService.Application.Handlers;
@@ -43,45 +45,80 @@ public class CreatePerformanceReviewCommandHandler
     /// <returns>The created review or an error message.</returns>
     public async Task<(PerformanceReview? Review, string? Error)> HandleAsync(CreatePerformanceReviewCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        var normalizedCommand = command with
+        {
+            ReviewPeriodStart = NormalizeToUtc(command.ReviewPeriodStart),
+            ReviewPeriodEnd = NormalizeToUtc(command.ReviewPeriodEnd)
+        };
+
+        var validationResult = await _validator.ValidateAsync(normalizedCommand, cancellationToken);
         if (!validationResult.IsValid)
         {
             return (null, validationResult.Error);
         }
 
-        if (!await _employeeService.ValidateEmployeeExistsAsync(command.EmployeeId, cancellationToken))
+        if (!await _employeeService.ValidateEmployeeExistsAsync(normalizedCommand.EmployeeId, cancellationToken))
         {
             return (null, "Employee not found.");
         }
 
         // Data Volume Limits
-        var count = await _repository.CountByEmployeeIdAsync(command.EmployeeId, cancellationToken);
+        var count = await _repository.CountByEmployeeIdAsync(normalizedCommand.EmployeeId, cancellationToken);
         if (count >= 50)
         {
             return (null, "DATA_VOLUME_LIMIT_REACHED: Maximum of 50 reviews per employee.");
         }
         if (count >= 40)
         {
-            await _notificationService.SendDataVolumeWarningAsync(command.EmployeeId, "PerformanceReview", count, 50, cancellationToken);
+            await _notificationService.SendDataVolumeWarningAsync(normalizedCommand.EmployeeId, "PerformanceReview", count, 50, cancellationToken);
         }
 
         var review = new PerformanceReview
         {
             Id = Guid.NewGuid(),
-            EmployeeId = command.EmployeeId,
+            EmployeeId = normalizedCommand.EmployeeId,
             ReviewerId = Guid.Empty, // Will be set or handled based on logic
-            ReviewCycle = command.ReviewCycle,
-            ReviewPeriodStart = command.ReviewPeriodStart,
-            ReviewPeriodEnd = command.ReviewPeriodEnd,
-            SelfAssessment = command.SelfAssessment,
+            ReviewCycle = normalizedCommand.ReviewCycle,
+            ReviewPeriodStart = normalizedCommand.ReviewPeriodStart,
+            ReviewPeriodEnd = normalizedCommand.ReviewPeriodEnd,
+            SelfAssessment = normalizedCommand.SelfAssessment,
             Status = ReviewStatus.Draft,
             CreatedDate = DateTime.UtcNow
         };
 
         var createdReview = await _repository.CreateAsync(review, cancellationToken);
 
-        // TODO: Publish event
-        
+        await _publishEndpoint.Publish(new PerformanceReviewCreatedEvent(
+            MessageId: Guid.NewGuid(),
+            MessageName: nameof(PerformanceReviewCreatedEvent),
+            MessageType: MessageType.Event,
+            MessageVersion: "1.0.0",
+            PublishedBy: "PerformanceService",
+            ConsumedBy: new List<string> { "NotificationService", "AnalyticsService" },
+            CorrelationId: Guid.NewGuid(),
+            CausationId: null,
+            OccurredAtUtc: DateTimeOffset.UtcNow,
+            IsPublic: false,
+            Payload: new PerformanceReviewCreatedEventPayload(
+                ReviewId: createdReview.Id,
+                EmployeeId: createdReview.EmployeeId,
+                ReviewerId: createdReview.ReviewerId,
+                ReviewCycle: createdReview.ReviewCycle.ToString(),
+                ReviewPeriodStart: new DateTimeOffset(createdReview.ReviewPeriodStart, TimeSpan.Zero),
+                ReviewPeriodEnd: new DateTimeOffset(createdReview.ReviewPeriodEnd, TimeSpan.Zero)
+            )
+        ), cancellationToken);
+
         return (createdReview, null);
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 }

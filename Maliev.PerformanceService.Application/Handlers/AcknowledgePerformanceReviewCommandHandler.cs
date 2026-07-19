@@ -2,7 +2,8 @@ using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -49,14 +50,14 @@ public class AcknowledgePerformanceReviewCommandHandler
 
         if (review.EmployeeId != command.AcknowledgedBy)
         {
-            _logger.LogWarning("User {UserId} attempted to acknowledge review {ReviewId} belonging to {EmployeeId}", 
+            _logger.LogWarning("User {UserId} attempted to acknowledge review {ReviewId} belonging to {EmployeeId}",
                 command.AcknowledgedBy, command.ReviewId, review.EmployeeId);
             return (null, "Only the employee being reviewed can acknowledge it");
         }
 
         if (review.Status != ReviewStatus.Submitted)
         {
-            _logger.LogWarning("Review {ReviewId} is in status {Status}, but must be Submitted for acknowledgment.", 
+            _logger.LogWarning("Review {ReviewId} is in status {Status}, but must be Submitted for acknowledgment.",
                 command.ReviewId, review.Status);
             return (null, "Review must be submitted by the manager before it can be acknowledged");
         }
@@ -67,13 +68,26 @@ public class AcknowledgePerformanceReviewCommandHandler
 
         await _repository.UpdateAsync(review);
 
-        await _publishEndpoint.Publish(new PerformanceReviewAcknowledgedEvent(
-            review.Id,
-            review.EmployeeId,
-            review.OverallRating,
-            review.AcknowledgedDate.Value));
+        await _publishEndpoint.Publish(new PerformanceReviewSubmittedEvent(
+            MessageId: Guid.NewGuid(),
+            MessageName: nameof(PerformanceReviewSubmittedEvent),
+            MessageType: MessageType.Event,
+            MessageVersion: "1.0.0",
+            PublishedBy: "PerformanceService",
+            ConsumedBy: Array.Empty<string>(),
+            CorrelationId: review.Id,
+            CausationId: null,
+            OccurredAtUtc: DateTimeOffset.UtcNow,
+            IsPublic: false,
+            Payload: new PerformanceReviewSubmittedEventPayload(
+                ReviewId: review.Id,
+                EmployeeId: review.EmployeeId,
+                OverallRating: (int)(review.OverallRating ?? 0),
+                SubmittedDate: new DateTimeOffset(review.AcknowledgedDate.Value, TimeSpan.Zero)
+            )
+        ));
 
-        _logger.LogInformation("Performance review {ReviewId} acknowledged by employee {EmployeeId}", 
+        _logger.LogInformation("Performance review {ReviewId} acknowledged by employee {EmployeeId}",
             review.Id, review.EmployeeId);
 
         return (review, null);

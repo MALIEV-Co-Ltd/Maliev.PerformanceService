@@ -50,8 +50,14 @@ public class SubmitPerformanceReviewCommandHandler
             return (null, "Review must have a completed self-assessment before manager submission.");
         }
 
-        // TODO: Authorization check - requesting user must be the manager of the employee
-        
+        // Authorization check: Only the assigned reviewer (manager) can submit
+        if (review.ReviewerId != command.RequestingUserId)
+        {
+            _logger.LogWarning("Unauthorized attempt to submit review {ReviewId} by user {UserId}. Expected reviewer {ReviewerId}.",
+                command.ReviewId, command.RequestingUserId, review.ReviewerId);
+            return (null, "You are not authorized to submit this review.");
+        }
+
         review.ManagerAssessment = command.ManagerAssessment;
         review.OverallRating = command.OverallRating;
         review.Status = ReviewStatus.Submitted;
@@ -59,8 +65,17 @@ public class SubmitPerformanceReviewCommandHandler
 
         await _repository.UpdateAsync(review, cancellationToken);
 
-        // TODO: Notify employee
-        
+        // Notify employee
+        try
+        {
+            await _notificationService.SendAcknowledgmentReminderAsync(review.EmployeeId, review.Id, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send notification to employee {EmployeeId} for review {ReviewId}", review.EmployeeId, review.Id);
+            // Non-blocking error
+        }
+
         return (review, null);
     }
 }

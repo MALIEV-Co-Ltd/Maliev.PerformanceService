@@ -3,7 +3,8 @@ using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Application.Validators;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -84,15 +85,27 @@ public class CreatePIPCommandHandler
 
         var createdPip = await _repository.CreateAsync(pip, cancellationToken);
 
-        await _publishEndpoint.Publish(new PIPInitiatedEvent(
-            createdPip.Id,
-            createdPip.EmployeeId,
-            createdPip.InitiatorId,
-            createdPip.StartDate,
-            createdPip.EndDate,
-            createdPip.Reason), cancellationToken);
+        await _publishEndpoint.Publish(new PerformancePIPInitiatedEvent(
+            MessageId: Guid.NewGuid(),
+            MessageName: nameof(PerformancePIPInitiatedEvent),
+            MessageType: MessageType.Event,
+            MessageVersion: "1.0.0",
+            PublishedBy: "PerformanceService",
+            ConsumedBy: Array.Empty<string>(),
+            CorrelationId: createdPip.Id,
+            CausationId: null,
+            OccurredAtUtc: DateTimeOffset.UtcNow,
+            IsPublic: false,
+            Payload: new PerformancePIPInitiatedEventPayload(
+                PipId: createdPip.Id,
+                EmployeeId: createdPip.EmployeeId,
+                StartDate: new DateTimeOffset(createdPip.StartDate, TimeSpan.Zero),
+                EndDate: new DateTimeOffset(createdPip.EndDate, TimeSpan.Zero),
+                Reason: createdPip.Reason
+            )
+        ), cancellationToken);
 
-        _logger.LogInformation("PIP {PIPId} initiated for employee {EmployeeId} by {InitiatorId}.", 
+        _logger.LogInformation("PIP {PIPId} initiated for employee {EmployeeId} by {InitiatorId}.",
             createdPip.Id, createdPip.EmployeeId, createdPip.InitiatorId);
 
         return (createdPip, null);

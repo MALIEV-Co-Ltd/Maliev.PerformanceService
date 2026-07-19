@@ -1,4 +1,3 @@
-using Cronos;
 using Maliev.PerformanceService.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,13 +7,14 @@ namespace Maliev.PerformanceService.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Background service that periodically archives old performance data.
-/// Runs monthly on the 1st day at midnight.
+/// Runs monthly on the 1st day at midnight UTC.
 /// </summary>
 public class DataArchivalBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DataArchivalBackgroundService> _logger;
-    private readonly CronExpression _cronExpression;
+    private readonly int _targetDayOfMonth = 1;
+    private readonly TimeSpan _scheduledTime = TimeSpan.Zero; // Midnight
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DataArchivalBackgroundService"/> class.
@@ -27,8 +27,6 @@ public class DataArchivalBackgroundService : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        // Monthly on the 1st at 00:00
-        _cronExpression = CronExpression.Parse("0 0 1 * *");
     }
 
     /// <inheritdoc/>
@@ -38,20 +36,40 @@ public class DataArchivalBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var utcNow = DateTime.UtcNow;
-            var nextUtc = _cronExpression.GetNextOccurrence(utcNow);
+            var now = DateTime.UtcNow;
+            var nextRunTime = CalculateNextMonthlyRunTime(now, _targetDayOfMonth, _scheduledTime);
+            var delay = nextRunTime - now;
 
-            if (nextUtc.HasValue)
+            if (delay > TimeSpan.Zero)
             {
-                var delay = nextUtc.Value - utcNow;
-                if (delay > TimeSpan.Zero)
-                {
-                    await Task.Delay(delay, stoppingToken);
-                }
+                await Task.Delay(delay, stoppingToken);
+            }
 
+            if (!stoppingToken.IsCancellationRequested)
+            {
                 await ArchiveOldDataAsync(stoppingToken);
             }
         }
+    }
+
+    private static DateTime CalculateNextMonthlyRunTime(DateTime currentTime, int targetDay, TimeSpan targetTime)
+    {
+        var currentMonth = new DateTime(currentTime.Year, currentTime.Month, 1);
+        var daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
+        var actualTargetDay = Math.Min(targetDay, daysInMonth);
+
+        var nextTargetDate = new DateTime(currentMonth.Year, currentMonth.Month, actualTargetDay).Add(targetTime);
+
+        // If we've already passed the target date this month, move to next month
+        if (currentTime >= nextTargetDate)
+        {
+            var nextMonth = currentMonth.AddMonths(1);
+            daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+            actualTargetDay = Math.Min(targetDay, daysInMonth);
+            nextTargetDate = new DateTime(nextMonth.Year, nextMonth.Month, actualTargetDay).Add(targetTime);
+        }
+
+        return nextTargetDate;
     }
 
     private async Task ArchiveOldDataAsync(CancellationToken stoppingToken)

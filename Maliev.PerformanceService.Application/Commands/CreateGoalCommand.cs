@@ -1,5 +1,3 @@
-using Maliev.PerformanceService.Domain.Enums;
-
 namespace Maliev.PerformanceService.Application.Commands;
 
 /// <summary>

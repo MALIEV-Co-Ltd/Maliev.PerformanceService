@@ -88,4 +88,40 @@ public class CreatePerformanceReviewCommandHandlerTests
         Assert.Equal(ReviewStatus.Draft, result.Review.Status);
         _repositoryMock.Verify(x => x.CreateAsync(It.IsAny<PerformanceReview>(), default), Times.Once);
     }
+
+    [Fact]
+    public async Task HandleAsync_UnspecifiedReviewDates_NormalizesToUtc()
+    {
+        // Arrange
+        var employeeId = Guid.NewGuid();
+        var command = new CreatePerformanceReviewCommand(
+            employeeId,
+            ReviewCycle.Quarterly,
+            new DateTime(2026, 1, 1),
+            new DateTime(2026, 3, 31),
+            "My self assessment",
+            Guid.NewGuid());
+
+        _repositoryMock.Setup(x => x.ExistsOverlappingReviewAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), null, default))
+            .ReturnsAsync(false);
+        _employeeServiceMock.Setup(x => x.ValidateEmployeeExistsAsync(employeeId, default))
+            .ReturnsAsync(true);
+        _repositoryMock.Setup(x => x.CreateAsync(It.IsAny<PerformanceReview>(), default))
+            .ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
+
+        // Act
+        var result = await _handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result.Review);
+        Assert.Equal(DateTimeKind.Utc, result.Review.ReviewPeriodStart.Kind);
+        Assert.Equal(DateTimeKind.Utc, result.Review.ReviewPeriodEnd.Kind);
+        _repositoryMock.Verify(x => x.ExistsOverlappingReviewAsync(
+            employeeId,
+            (int)ReviewCycle.Quarterly,
+            It.Is<DateTime>(d => d.Kind == DateTimeKind.Utc),
+            It.Is<DateTime>(d => d.Kind == DateTimeKind.Utc),
+            null,
+            default), Times.Once);
+    }
 }

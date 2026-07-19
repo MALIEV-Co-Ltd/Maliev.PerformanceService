@@ -32,5 +32,10 @@ public class GoalConfiguration : IEntityTypeConfiguration<Goal>
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.ToTable(t => t.HasCheckConstraint("CK_Goal_TargetDate", "target_completion_date > created_date"));
+
+        builder.Property<uint>("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

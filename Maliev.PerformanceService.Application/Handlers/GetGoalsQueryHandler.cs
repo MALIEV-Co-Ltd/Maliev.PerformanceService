@@ -10,13 +10,15 @@ namespace Maliev.PerformanceService.Application.Handlers;
 public class GetGoalsQueryHandler
 {
     private readonly IGoalRepository _repository;
+    private readonly IEmployeeServiceClient _employeeService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetGoalsQueryHandler"/> class.
     /// </summary>
-    public GetGoalsQueryHandler(IGoalRepository repository)
+    public GetGoalsQueryHandler(IGoalRepository repository, IEmployeeServiceClient employeeService)
     {
         _repository = repository;
+        _employeeService = employeeService;
     }
 
     /// <summary>
@@ -27,8 +29,16 @@ public class GetGoalsQueryHandler
     /// <returns>A collection of goals and the next cursor.</returns>
     public async Task<(IEnumerable<Goal> Items, Guid? NextCursor)> HandleAsync(GetGoalsQuery query, CancellationToken cancellationToken = default)
     {
-        // TODO: Authorization check
-        
+        // Authorization check: Employee sees own goals, Manager sees reports' goals
+        if (query.EmployeeId != query.RequestingUserId)
+        {
+            var isManager = await _employeeService.ValidateManagerEmployeeRelationshipAsync(query.RequestingUserId, query.EmployeeId, cancellationToken);
+            if (!isManager)
+            {
+                return (Enumerable.Empty<Goal>(), null);
+            }
+        }
+
         return await _repository.GetByEmployeeIdPaginatedAsync(query.EmployeeId, query.Cursor, query.Limit, cancellationToken);
     }
 }
