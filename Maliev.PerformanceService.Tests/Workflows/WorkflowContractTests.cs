@@ -36,6 +36,15 @@ public sealed class WorkflowContractTests
     }
 
     [Fact]
+    public void DevelopValidation_CanBeRunManuallyWithoutDeploymentCredentials()
+    {
+        var text = Read("ci-develop.yml");
+
+        Assert.Contains("workflow_dispatch:", text);
+        AssertSafe(text);
+    }
+
+    [Fact]
     public void ReusableValidation_IsCredentialFreeAndUsesImmutablePublicSources()
     {
         var text = Read("_validate.yml");
