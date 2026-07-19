@@ -52,7 +52,7 @@ public class SubmitPerformanceReviewCommandHandlerTests
         var reviewId = Guid.NewGuid();
         var review = new PerformanceReview { Id = reviewId, Status = ReviewStatus.Draft };
         var command = new SubmitPerformanceReviewCommand(reviewId, "Great", PerformanceRating.ExceedsExpectations, Guid.NewGuid());
-        
+
         _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
 
         // Act
@@ -68,9 +68,10 @@ public class SubmitPerformanceReviewCommandHandlerTests
     {
         // Arrange
         var reviewId = Guid.NewGuid();
-        var review = new PerformanceReview { Id = reviewId, Status = ReviewStatus.SelfAssessmentPending };
-        var command = new SubmitPerformanceReviewCommand(reviewId, "Great job", PerformanceRating.ExceedsExpectations, Guid.NewGuid());
-        
+        var reviewerId = Guid.NewGuid();
+        var review = new PerformanceReview { Id = reviewId, Status = ReviewStatus.SelfAssessmentPending, ReviewerId = reviewerId };
+        var command = new SubmitPerformanceReviewCommand(reviewId, "Great job", PerformanceRating.ExceedsExpectations, reviewerId);
+
         _repositoryMock.Setup(x => x.GetByIdAsync(reviewId, default)).ReturnsAsync(review);
         _repositoryMock.Setup(x => x.UpdateAsync(It.IsAny<PerformanceReview>(), default)).ReturnsAsync((PerformanceReview r, CancellationToken ct) => r);
 

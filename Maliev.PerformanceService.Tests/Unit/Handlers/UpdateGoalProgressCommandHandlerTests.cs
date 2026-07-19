@@ -4,7 +4,7 @@ using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Application.Validators;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -93,7 +93,7 @@ public class UpdateGoalProgressCommandHandlerTests
         Assert.Null(error);
         Assert.Equal(GoalStatus.Completed, updatedGoal!.CurrentStatus);
         Assert.NotNull(updatedGoal.CompletionDate);
-        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<GoalCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PerformanceGoalCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

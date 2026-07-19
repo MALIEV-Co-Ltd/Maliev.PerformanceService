@@ -1,19 +1,21 @@
-using System.Security.Claims;
+using Asp.Versioning;
+using Maliev.Aspire.ServiceDefaults.Authorization;
 using Maliev.PerformanceService.Api.DTOs;
 using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Queries;
-using Microsoft.AspNetCore.Authorization;
+using Maliev.PerformanceService.Domain.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Maliev.PerformanceService.Api.Controllers;
 
 /// <summary>
 /// Controller for managing performance goals.
 /// </summary>
-[Authorize]
 [ApiController]
-[Route("performance/v1")]
+[ApiVersion("1")]
+[Route("performance/v{version:apiVersion}")]
 public class GoalsController : ControllerBase
 {
     private readonly CreateGoalCommandHandler _createHandler;
@@ -46,6 +48,7 @@ public class GoalsController : ControllerBase
     /// <param name="request">The goal creation details.</param>
     /// <returns>The created goal details.</returns>
     [HttpPost("employees/{employeeId}/goals")]
+    [RequirePermission(PerformancePermissions.Create)]
     [ProducesResponseType(typeof(GoalDto), 201)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> CreateGoal(Guid employeeId, [FromBody] CreateGoalRequest request)
@@ -75,12 +78,13 @@ public class GoalsController : ControllerBase
     /// <param name="limit">Maximum number of items to return.</param>
     /// <returns>A paginated list of goals.</returns>
     [HttpGet("employees/{employeeId}/goals")]
+    [RequirePermission(PerformancePermissions.Read)]
     [ProducesResponseType(typeof(IEnumerable<GoalDto>), 200)]
     public async Task<IActionResult> GetGoals(Guid employeeId, [FromQuery] Guid? cursor, [FromQuery] int limit = 10)
     {
         var query = new GetGoalsQuery(employeeId, cursor, limit, GetUserId());
         var (items, nextCursor) = await _getGoalsHandler.HandleAsync(query);
-        
+
         Response.Headers["X-Next-Cursor"] = nextCursor?.ToString();
         return Ok(items.Select(MapToDto));
     }
@@ -91,6 +95,7 @@ public class GoalsController : ControllerBase
     /// <param name="goalId">The goal identifier.</param>
     /// <returns>The goal details.</returns>
     [HttpGet("goals/{goalId}")]
+    [RequirePermission(PerformancePermissions.Read)]
     [ProducesResponseType(typeof(GoalDto), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetGoalById(Guid goalId)
@@ -111,6 +116,7 @@ public class GoalsController : ControllerBase
     /// <param name="request">The update details.</param>
     /// <returns>The updated goal details.</returns>
     [HttpPut("goals/{goalId}")]
+    [RequirePermission(PerformancePermissions.Update)]
     [ProducesResponseType(typeof(GoalDto), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> UpdateGoal(Guid goalId, [FromBody] CreateGoalRequest request)
@@ -138,6 +144,7 @@ public class GoalsController : ControllerBase
     /// <param name="request">The progress update details.</param>
     /// <returns>The updated goal details.</returns>
     [HttpPut("goals/{goalId}/progress")]
+    [RequirePermission(PerformancePermissions.Update)]
     [ProducesResponseType(typeof(GoalDto), 200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> UpdateProgress(Guid goalId, [FromBody] UpdateGoalProgressRequest request)

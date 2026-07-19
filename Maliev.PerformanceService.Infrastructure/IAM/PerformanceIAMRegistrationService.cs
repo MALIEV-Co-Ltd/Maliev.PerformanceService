@@ -10,15 +10,17 @@ namespace Maliev.PerformanceService.Infrastructure.IAM;
 /// </summary>
 public class PerformanceIAMRegistrationService : IAMRegistrationService
 {
+    private const string RegistrationServiceName = "performance";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PerformanceIAMRegistrationService"/> class.
     /// </summary>
-    /// <param name="configuration">Application configuration used by the shared IAM registration client.</param>
+    /// <param name="configuration">The application configuration.</param>
     /// <param name="logger">Logger instance.</param>
     public PerformanceIAMRegistrationService(
         IConfiguration configuration,
         ILogger<PerformanceIAMRegistrationService> logger)
-        : base(configuration, logger, "PerformanceService")
+        : base(configuration, logger, RegistrationServiceName)
     {
     }
 

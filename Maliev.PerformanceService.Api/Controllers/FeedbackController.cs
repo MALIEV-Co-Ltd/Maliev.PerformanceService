@@ -1,19 +1,21 @@
-using System.Security.Claims;
+using Asp.Versioning;
+using Maliev.Aspire.ServiceDefaults.Authorization;
 using Maliev.PerformanceService.Api.DTOs;
 using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Queries;
-using Microsoft.AspNetCore.Authorization;
+using Maliev.PerformanceService.Domain.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Maliev.PerformanceService.Api.Controllers;
 
 /// <summary>
 /// Controller for managing 360-degree feedback.
 /// </summary>
-[Authorize]
 [ApiController]
-[Route("performance/v1")]
+[ApiVersion("1")]
+[Route("performance/v{version:apiVersion}/reviews")]
 public class FeedbackController : ControllerBase
 {
     private readonly SubmitFeedbackCommandHandler _submitHandler;
@@ -36,7 +38,8 @@ public class FeedbackController : ControllerBase
     /// <param name="reviewId">The performance review identifier.</param>
     /// <param name="request">The feedback submission details.</param>
     /// <returns>The submitted feedback details.</returns>
-    [HttpPost("reviews/{reviewId}/feedback")]
+    [HttpPost("{reviewId}/feedback")]
+    [RequirePermission(PerformancePermissions.Feedback)]
     [ProducesResponseType(typeof(FeedbackDto), 201)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> SubmitFeedback(Guid reviewId, [FromBody] SubmitFeedbackRequest request)
@@ -63,7 +66,8 @@ public class FeedbackController : ControllerBase
     /// </summary>
     /// <param name="reviewId">The performance review identifier.</param>
     /// <returns>A collection of feedback details.</returns>
-    [HttpGet("reviews/{reviewId}/feedback")]
+    [HttpGet("{reviewId}/feedback")]
+    [RequirePermission(PerformancePermissions.Feedback)]
     [ProducesResponseType(typeof(IEnumerable<FeedbackDto>), 200)]
     public async Task<IActionResult> GetFeedback(Guid reviewId)
     {

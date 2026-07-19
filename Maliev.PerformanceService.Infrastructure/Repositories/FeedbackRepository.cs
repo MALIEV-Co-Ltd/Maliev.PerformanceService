@@ -1,9 +1,8 @@
-using System.Security.Cryptography;
-using System.Text;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Maliev.PerformanceService.Infrastructure.Repositories;
 

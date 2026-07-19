@@ -2,7 +2,8 @@ using Maliev.PerformanceService.Application.Commands;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Domain.Entities;
 using Maliev.PerformanceService.Domain.Enums;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
@@ -72,18 +73,31 @@ public class RecordPIPOutcomeCommandHandler
         {
             pip.Status = command.Outcome == PIPOutcome.Successful ? PIPStatus.Completed : PIPStatus.Terminated;
             pip.Outcome = command.Outcome;
-            
+
             await _publishEndpoint.Publish(new PIPCompletedEvent(
-                pip.Id,
-                pip.EmployeeId,
-                pip.Outcome,
-                DateTime.UtcNow), cancellationToken);
+                MessageId: Guid.NewGuid(),
+                MessageName: nameof(PIPCompletedEvent),
+                MessageType: MessageType.Event,
+                MessageVersion: "1.0.0",
+                PublishedBy: "PerformanceService",
+                ConsumedBy: Array.Empty<string>(),
+                CorrelationId: pip.Id,
+                CausationId: null,
+                OccurredAtUtc: DateTimeOffset.UtcNow,
+                IsPublic: false,
+                Payload: new PIPCompletedEventPayload(
+                    PipId: pip.Id,
+                    EmployeeId: pip.EmployeeId,
+                    Outcome: pip.Outcome?.ToString() ?? "Unknown",
+                    CompletedDate: DateTimeOffset.UtcNow
+                )
+            ), cancellationToken);
         }
 
         pip.ModifiedDate = DateTime.UtcNow;
         await _repository.UpdateAsync(pip, cancellationToken);
 
-        _logger.LogInformation("Outcome {Outcome} recorded for PIP {PIPId}. New Status: {Status}.", 
+        _logger.LogInformation("Outcome {Outcome} recorded for PIP {PIPId}. New Status: {Status}.",
             command.Outcome, pip.Id, pip.Status);
 
         return (pip, null);

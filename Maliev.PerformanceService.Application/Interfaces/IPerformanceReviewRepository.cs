@@ -78,4 +78,14 @@ public interface IPerformanceReviewRepository
     /// Marks a review as archived.
     /// </summary>
     Task MarkAsArchivedAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Closes all active performance reviews for an employee (e.g., due to termination).
+    /// </summary>
+    Task CloseAllActiveReviewsForEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves reviews that require reminders to be sent.
+    /// </summary>
+    Task<IEnumerable<PerformanceReview>> GetPendingRemindersAsync(CancellationToken cancellationToken = default);
 }

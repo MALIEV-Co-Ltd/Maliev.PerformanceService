@@ -7,7 +7,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SharedLibraryVersion Condition="'$(SharedLibraryVersion)' == ''">1.0.*-*</SharedLibraryVersion>
-    <SharedSourceRoot Condition="'$(SharedSourceRoot)' == '' And Exists('../../Maliev.Aspire/Maliev.Aspire.ServiceDefaults/Maliev.Aspire.ServiceDefaults.csproj')">../..</SharedSourceRoot>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(SharedSourceRoot)' != ''">

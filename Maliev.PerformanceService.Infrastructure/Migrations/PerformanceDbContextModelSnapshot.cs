@@ -17,7 +17,7 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -69,6 +69,12 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     b.Property<DateTime>("TargetCompletionDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("target_completion_date");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_goals");
@@ -150,6 +156,12 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("success_criteria");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_performance_improvement_plans");
 
@@ -228,6 +240,12 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("submitted_date");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_performance_reviews");
 
@@ -281,6 +299,12 @@ namespace Maliev.PerformanceService.Infrastructure.Migrations
                     b.Property<DateTime>("SubmittedDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("submitted_date");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_review_feedback");

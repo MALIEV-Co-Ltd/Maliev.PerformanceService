@@ -10,13 +10,15 @@ namespace Maliev.PerformanceService.Application.Handlers;
 public class GetPerformanceReviewsQueryHandler
 {
     private readonly IPerformanceReviewRepository _repository;
+    private readonly IEmployeeServiceClient _employeeService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetPerformanceReviewsQueryHandler"/> class.
     /// </summary>
-    public GetPerformanceReviewsQueryHandler(IPerformanceReviewRepository repository)
+    public GetPerformanceReviewsQueryHandler(IPerformanceReviewRepository repository, IEmployeeServiceClient employeeService)
     {
         _repository = repository;
+        _employeeService = employeeService;
     }
 
     /// <summary>
@@ -27,9 +29,16 @@ public class GetPerformanceReviewsQueryHandler
     /// <returns>A collection of performance reviews.</returns>
     public async Task<IEnumerable<PerformanceReview>> HandleAsync(GetPerformanceReviewsQuery query, CancellationToken cancellationToken = default)
     {
-        // TODO: Authorization check
-        // employees see own reviews, managers see direct reports, HR sees all
-        
+        // Authorization check: Employees see own reviews, Managers see direct reports
+        if (query.EmployeeId != query.RequestingUserId)
+        {
+            var isManager = await _employeeService.ValidateManagerEmployeeRelationshipAsync(query.RequestingUserId, query.EmployeeId, cancellationToken);
+            if (!isManager)
+            {
+                return Enumerable.Empty<PerformanceReview>();
+            }
+        }
+
         return await _repository.GetByEmployeeIdAsync(query.EmployeeId, cancellationToken);
     }
 }

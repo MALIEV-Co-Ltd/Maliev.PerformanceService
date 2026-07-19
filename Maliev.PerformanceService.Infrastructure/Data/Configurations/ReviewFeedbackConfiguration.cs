@@ -29,9 +29,10 @@ public class ReviewFeedbackConfiguration : IEntityTypeConfiguration<ReviewFeedba
             .WithMany()
             .HasForeignKey(x => x.PerformanceReviewId)
             .OnDelete(DeleteBehavior.Cascade);
-            
-        // Note: Field-level encryption for ProviderId when IsAnonymous=true 
-        // is better handled via a ValueConverter if we want it in the database.
-        // However, the task mentions it specifically for the configuration.
+
+        builder.Property<uint>("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

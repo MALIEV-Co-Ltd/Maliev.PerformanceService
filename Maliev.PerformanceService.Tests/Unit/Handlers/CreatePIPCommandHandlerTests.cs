@@ -3,7 +3,7 @@ using Maliev.PerformanceService.Application.Handlers;
 using Maliev.PerformanceService.Application.Interfaces;
 using Maliev.PerformanceService.Application.Validators;
 using Maliev.PerformanceService.Domain.Entities;
-using Maliev.PerformanceService.Domain.Events;
+using Maliev.MessagingContracts.Contracts.Performance;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -58,7 +58,7 @@ public class CreatePIPCommandHandlerTests
         Assert.Null(error);
         Assert.NotNull(pip);
         _pipRepositoryMock.Verify(x => x.CreateAsync(It.IsAny<PerformanceImprovementPlan>(), It.IsAny<CancellationToken>()), Times.Once);
-        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PIPInitiatedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        _publishEndpointMock.Verify(x => x.Publish(It.IsAny<PerformancePIPInitiatedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
